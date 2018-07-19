@@ -24,13 +24,13 @@ class Config:
         if 'endpoint' not in self.config['source']:
             raise ConfigNotValidError("Config is missing source endpoint")
 
+        if 'var' not in self.config['source']:
+            raise ConfigNotValidError("Config is missing source var")
+
         if 'rawquery' not in self.config['source']:
 
             if 'graph' not in self.config['source']:
                 raise ConfigNotValidError("Config is missing source graph")
-
-            if 'var' not in self.config['source']:
-                raise ConfigNotValidError("Config is missing source var")
 
             if 'property' not in self.config['source']:
                 raise ConfigNotValidError("Config is missing source property")
@@ -38,13 +38,13 @@ class Config:
         if 'endpoint' not in self.config['target']:
             raise ConfigNotValidError("Config is missing target endpoint")
 
+        if 'var' not in self.config['target']:
+            raise ConfigNotValidError("Config is missing target var")
+
         if 'rawquery' not in self.config['target']:
 
             if 'graph' not in self.config['target']:
                 raise ConfigNotValidError("Config is missing target graph")
-
-            if 'var' not in self.config['target']:
-                raise ConfigNotValidError("Config is missing target var")
 
             if 'property' not in self.config['target']:
                 raise ConfigNotValidError("Config is missing target property")
