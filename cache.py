@@ -8,6 +8,9 @@ from rtree.index import Index
 from shapely.geometry import mapping, shape
 from shapely.wkt import loads
 
+from logger import InfoLogger
+
+import logging
 import pickle
 import time
 
@@ -18,10 +21,12 @@ class Cache:
         self.sparql = sparql
         self.type = type
 
+        self.info_logger = InfoLogger('InfoLogger', sparql.get_query_hash())
+
     def create_cache_chunks(self, index=False):
         if isfile(join('cache', '{}.bin'.format(self.sparql.query_hash))):
-            print("Cache file {}.bin for query already exists".format(self.sparql.query_hash))
-            print("Loading cache file...")
+            self.info_logger.logger.log(logging.INFO, "Cache file {}.bin for query already exists".format(self.sparql.query_hash))
+            self.info_logger.logger.log(logging.INFO, "Loading cache file...")
             with open('cache/{}.bin'.format(self.sparql.query_hash), 'rb') as cache_file:
                 items = cache_file.readlines()
 
@@ -44,7 +49,7 @@ class Cache:
                 chunksize = limit - offset
                 run = False
 
-            print("Getting statements from {} to {}".format(offset, offset + chunksize))
+            self.info_logger.logger.log(logging.INFO, "Getting statements from {} to {}".format(offset, offset + chunksize))
             result = self.sparql.query(offset, chunksize)
             result_info = result.info()
 
@@ -53,7 +58,8 @@ class Cache:
 
                 if max_chunksize_server and max_chunksize_server < chunksize:
                     chunksize = max_chunksize_server
-                    print("Max server rows is smaller than chunksize, new chunksize is {}".format(max_chunksize_server))
+                    self.info_logger.logger.log(
+                        logging.INFO, "Max server rows is smaller than chunksize, new chunksize is {}".format(max_chunksize_server))
 
             offset = offset + chunksize
 
@@ -62,7 +68,7 @@ class Cache:
                     results.append(item)
 
         end = time.time()
-        print("Retrieving statements took {}".format(round(end - start, 4)))
+        self.info_logger.logger.log(logging.INFO, "Retrieving statements took {}".format(round(end - start, 4)))
 
         self.write_cache_file(results)
 
@@ -72,13 +78,13 @@ class Cache:
         return results
 
     def write_cache_file(self, results):
-        print("Writing cache file: {}.bin".format(self.sparql.query_hash))
+        self.info_logger.logger.log(logging.INFO, "Writing cache file: {}.bin".format(self.sparql.query_hash))
 
         with open(join('cache', '{}.bin'.format(self.sparql.query_hash)), 'wb') as cache_file:
             cache_file.writelines(results)
 
     def write_index_file(self, results):
-        print("Writing index file for {}".format(self.sparql.query_hash))
+        self.info_logger.logger.log(logging.INFO, "Writing index file for {}".format(self.sparql.query_hash))
 
         idx = FastRetree(join('cache', self.sparql.query_hash), rtree_generator(results))
         idx.close()
