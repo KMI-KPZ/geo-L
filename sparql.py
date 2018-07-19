@@ -20,7 +20,6 @@ class SPARQL:
 
     def build_query(self, offset, limit=None):
         if self.config.get_rawquery(self.type) is not None:
-            print(self.type)
             return self.config.get_rawquery(self.type)
         else:
             query_prefixes = self.buid_prefixes()
