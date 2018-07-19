@@ -14,7 +14,7 @@ class ErrorLogger:
 
         logger_handler = logging.FileHandler(join('logs', '{}_{}.log'.format(query_hash, error_type)))
         logger_handler.setLevel(logging.ERROR)
-        logger_formater = logging.Formatter('%(message)s')
+        logger_formater = logging.Formatter('%(asctime)s - %(message)s')
         logger_handler.setFormatter(logger_formater)
         self.logger.addHandler(logger_handler)
 
@@ -28,6 +28,18 @@ class ResultLogger:
         logger_handler = logging.FileHandler(join('output', '{}_{}.log'.format(source_hash, target_hash)))
         logger_handler.setLevel(logging.INFO)
         logger_formater = logging.Formatter('%(message)s')
+        logger_handler.setFormatter(logger_formater)
+        self.logger.addHandler(logger_handler)
+
+
+class InfoLogger:
+    def __init__(self, name, query_hash):
+        self.logger = logging.getLogger('{}_{}'.format(name, query_hash))
+        self.logger.setLevel(logging.INFO)
+
+        logger_formater = logging.Formatter('%(asctime)s - %(message)s')
+        logger_handler = logging.StreamHandler()
+        logger_handler.setLevel(logging.INFO)
         logger_handler.setFormatter(logger_formater)
         self.logger.addHandler(logger_handler)
 
