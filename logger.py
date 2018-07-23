@@ -7,14 +7,14 @@ import logging
 
 
 class ErrorLogger:
-    def __init__(self, query_hash, name, error_type):
+    def __init__(self,  name, error_type, query_hash):
         self.logger = logging.getLogger('{}_{}'.format(query_hash, name))
         self.logger.setLevel(logging.ERROR)
         self.logger.propagate = False
 
         logger_handler = logging.FileHandler(join('logs', '{}_{}.log'.format(query_hash, error_type)))
         logger_handler.setLevel(logging.ERROR)
-        logger_formater = logging.Formatter('%(asctime)s - %(message)s')
+        logger_formater = logging.Formatter('%(message)s')
         logger_handler.setFormatter(logger_formater)
         self.logger.addHandler(logger_handler)
 
