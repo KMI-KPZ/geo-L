@@ -16,7 +16,7 @@ class SPARQL:
         self.config = config
         self.type = type
         self.query_hash = self.get_query_hash()
-        self.sparql_error_logger = ErrorLogger(self.query_hash, 'SparqlErrorLogger', 'sparql_errors')
+        self.sparql_error_logger = ErrorLogger('SparqlErrorLogger', 'sparql_errors', self.query_hash)
 
     def build_query(self, offset, limit=None):
         if self.config.get_rawquery(self.type) is not None:
