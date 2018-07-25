@@ -21,21 +21,27 @@
         "id": "spoi",
         "endpoint": "https://www.foodie-cloud.org/sparql",
         "graph": "http://www.sdi4apps.eu/poi.rdf",
-        "var": "x",
-        "property": "geos:asWKT",
+        "var": {
+            "uri": "x",
+            "shape": "geoloc"
+        },
+        "property": "?x geos:asWKT ?geoloc",
         "offset": 0,
-        "limit": 1000000,
+        "limit": 165000,
         "chunksize": 165000
     },
     "target": {
         "id": "olu",
         "endpoint": "https://www.foodie-cloud.org/sparql",
         "graph": "http://w3id.org/foodie/olu#",
-        "var": "y",
+        "var": {
+            "uri": "a",
+            "shape": "v0"
+        },
         "restriction": "?a geos:hasGeometry ?y",
-        "property": "geos:asWKT",
+        "property": "?y geos:asWKT ?v0",
         "offset": 0,
-        "limit": 1000000,
+        "limit": 165000,
         "chunksize": 165000
     },
     "measures": [
