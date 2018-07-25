@@ -1,6 +1,7 @@
 #!/usr/bin/python3.6
 # -*- coding: utf-8 -*-
 
+from csv import reader, writer
 from fiona import collection
 from os.path import join, isfile
 from rtree import Rtree
@@ -24,11 +25,11 @@ class Cache:
         self.info_logger = InfoLogger('InfoLogger', sparql.get_query_hash())
 
     def create_cache_chunks(self, index=False):
-        if isfile(join('cache', '{}.bin'.format(self.sparql.query_hash))):
-            self.info_logger.logger.log(logging.INFO, "Cache file {}.bin for query already exists".format(self.sparql.query_hash))
+        if isfile(join('cache', '{}.csv'.format(self.sparql.query_hash))):
+            self.info_logger.logger.log(logging.INFO, "Cache file {}.csv for query already exists".format(self.sparql.query_hash))
             self.info_logger.logger.log(logging.INFO, "Loading cache file...")
-            with open('cache/{}.bin'.format(self.sparql.query_hash), 'rb') as cache_file:
-                items = cache_file.readlines()
+            with open('cache/{}.csv'.format(self.sparql.query_hash), 'r') as cache_file:
+                items = list(reader(cache_file, delimiter=';'))
 
                 if index:
                     if not isfile(join('cache', '{}.idx'.format(self.sparql.query_hash))):
@@ -63,9 +64,35 @@ class Cache:
 
             offset = offset + chunksize
 
+            uri_idx = -1
+            shape_idx = -1
+
             for idx, item in enumerate(result):
-                if idx > 0:
-                    results.append(item)
+                item_decoded = item.decode('utf-8')
+                item_split = item_decoded.split('","')
+
+                if idx == 0:
+                    for split_index, split in enumerate(item_split):
+                        split = split.replace('"', '').replace('\n', '')
+
+                        if split == self.config.get_var_uri(self.type):
+                            uri_idx = split_index
+
+                        if split == self.config.get_var_shape(self.type):
+                            shape_idx = split_index
+                elif idx > 0:
+                    items = [None, None]
+
+                    for split_index, split in enumerate(item_split):
+                        split = split.replace('"', '').replace('\n', '')
+
+                        if split_index == uri_idx:
+                            items[0] = split
+                        elif split_index == shape_idx:
+                            items[1] = split
+
+                    if items[0] and items[1]:
+                        results.append(items)
 
         end = time.time()
         self.info_logger.logger.log(logging.INFO, "Retrieving statements took {}".format(round(end - start, 4)))
@@ -78,10 +105,11 @@ class Cache:
         return results
 
     def write_cache_file(self, results):
-        self.info_logger.logger.log(logging.INFO, "Writing cache file: {}.bin".format(self.sparql.query_hash))
+        self.info_logger.logger.log(logging.INFO, "Writing cache file: {}.csv".format(self.sparql.query_hash))
 
-        with open(join('cache', '{}.bin'.format(self.sparql.query_hash)), 'wb') as cache_file:
-            cache_file.writelines(results)
+        with open(join('cache', '{}.csv'.format(self.sparql.query_hash)), 'w') as cache_file:
+            csvWriter = writer(cache_file, delimiter=';')
+            csvWriter.writerows(results)
 
     def write_index_file(self, results):
         self.info_logger.logger.log(logging.INFO, "Writing index file for {}".format(self.sparql.query_hash))
@@ -97,11 +125,8 @@ class FastRetree(Rtree):
 
 def rtree_generator(items):
     for i, item in enumerate(items):
-        item_decoded = item.decode('utf-8')
-        item_split = item_decoded.split('","')
-        uri = item_split[0][1:]
-        shape = item_split[1][:-2]
-        geometry = loads(shape)
+        uri = item[0]
+        geometry = loads(item[1])
 
         if not geometry.is_empty:  # Exclude empty geometry
             yield (i, geometry.bounds, None)
