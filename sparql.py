@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from hashlib import md5
+from re import sub
 from SPARQLWrapper import SPARQLWrapper, CSV
 from SPARQLWrapper.SPARQLExceptions import EndPointInternalError, EndPointNotFound, SPARQLWrapperException, Unauthorized
 
@@ -67,6 +68,14 @@ class SPARQL:
 
         return query_where
 
+    def clean_query(self, query):
+        query = sub('\n', '', query)
+        query = sub('[ ]+', ' ', query)
+        query = sub('[ ]{[ ]', ' {', query)
+        query = sub('[ ]}[ ]', '} ', query)
+
+        return query
+
     def query(self, offset, limit=None):
         sparql = SPARQLWrapper(self.config.get_endpoint(self.type))
         query = self.build_query(offset, limit)
@@ -88,5 +97,5 @@ class SPARQL:
         return None
 
     def get_query_hash(self):
-        query = self.build_query(self.config.get_offset(self.type), self.config.get_limit(self.type))
+        query = self.clean_query(self.build_query(self.config.get_offset(self.type), self.config.get_limit(self.type)))
         return md5(query.encode('utf-8')).hexdigest()
