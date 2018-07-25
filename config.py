@@ -26,9 +26,14 @@ class Config:
 
         if 'var' not in self.config['source']:
             raise ConfigNotValidError("Config is missing source var")
+        else:
+            if 'uri' not in self.config['source']['var']:
+                raise ConfigNotValidError("Variable for uri not specified in  source")
+
+            if 'shape' not in self.config['source']['var']:
+                raise ConfigNotValidError("Variable for shape not specified in  source")
 
         if 'rawquery' not in self.config['source']:
-
             if 'graph' not in self.config['source']:
                 raise ConfigNotValidError("Config is missing source graph")
 
@@ -40,9 +45,14 @@ class Config:
 
         if 'var' not in self.config['target']:
             raise ConfigNotValidError("Config is missing target var")
+        else:
+            if 'uri' not in self.config['target']['var']:
+                raise ConfigNotValidError("Variable for uri not specified in  target")
+
+            if 'shape' not in self.config['target']['var']:
+                raise ConfigNotValidError("Variable for shape not specified in  target")
 
         if 'rawquery' not in self.config['target']:
-
             if 'graph' not in self.config['target']:
                 raise ConfigNotValidError("Config is missing target graph")
 
@@ -130,11 +140,17 @@ class Config:
         else:
             return None
 
-    def get_var(self, type):
+    def get_var_uri(self, type):
         if type != 'source' and type != 'target':
             raise Exception("Wrong type (not source or target) specified")
 
-        return self.config[type]['var']
+        return self.config[type]['var']['uri']
+
+    def get_var_shape(self, type):
+        if type != 'source' and type != 'target':
+            raise Exception("Wrong type (not source or target) specified")
+
+        return self.config[type]['var']['shape']
 
 
 class ConfigNotValidError(Exception):
