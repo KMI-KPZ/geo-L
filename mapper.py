@@ -73,7 +73,7 @@ class Mapper:
 
         end = time.time()
 
-        self.info_logger.logger.log(logging.INFO, "Mapping took : {}s".format(round(end - start, 4)))
+        self.info_logger.logger.log(logging.INFO, "Mapping took: {}s".format(round(end - start, 4)))
         self.info_logger.logger.log(logging.INFO, "{} mappings found".format(count))
 
 
