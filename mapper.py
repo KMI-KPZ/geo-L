@@ -3,7 +3,7 @@
 
 from collections import OrderedDict
 from ctypes import c_char_p
-from multiprocessing import cpu_count, Array
+from multiprocessing import cpu_count
 from multiprocessing.pool import Pool
 from os.path import join
 from shapely.errors import TopologicalError
@@ -30,8 +30,7 @@ class Mapper:
 
         # Shared data necessary for RAM usage
         global target_data
-        target_data = Array(c_char_p, len(self.target), lock=False)
-        target_data[:len(self.target)] = self.target
+        target_data = self.target
 
         self.error_logger = ErrorLogger('ErrorLogger', 'errors', '{}_{}'.format(source_sparql.get_query_hash(), target_sparql.get_query_hash()))
         self.info_logger = InfoLogger('InfoLogger', '{}_{}'.format(source_sparql.get_query_hash(), target_sparql.get_query_hash()))
@@ -96,20 +95,15 @@ def async_map(measures, source_shapes, target_index):
 def compare(measures, source_item, target_index):
     results = []
     errors = []
-    item = source_item.decode('utf-8')
-    item = item.split('","')
-    uri = item[0][1:]
-    shape = item[1][:-2]
-    geometry = loads(shape)
+    item = source_item
+    uri = item[0]
+    geometry = loads(item[1])
 
     if geometry.is_valid:
         for j in target_index.intersection(geometry.coords[0]):
             target_item = target_data[j]
-            target_item = target_item.decode('utf-8')
-            target_item = target_item.split('","')
-            target_uri = target_item[0][1:]
-            target_shape = target_item[1][:-2]
-            target_geometry = loads(target_shape)
+            target_uri = target_item[0]
+            target_geometry = loads(target_item[1])
 
             if target_geometry.is_valid:
                 if 'contains' in measures and target_geometry.contains(item):
