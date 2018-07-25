@@ -23,7 +23,7 @@ class SPARQL:
             return self.config.get_rawquery(self.type)
         else:
             query_prefixes = self.buid_prefixes()
-            query_select = 'SELECT DISTINCT ?{} ?{}'.format(self.config.get_var(self.type), 'shape')
+            query_select = 'SELECT DISTINCT ?{} ?{}'.format(self.config.get_var_uri(self.type), self.config.get_var_shape(self.type))
             query_from = 'FROM <{}>'.format(self.config.get_graph(self.type))
             query_where = self.build_where()
             query_offset = 'OFFSET {}'.format(offset)
@@ -54,12 +54,16 @@ class SPARQL:
 
     def build_where(self):
         restriction = self.config.get_restriction(self.type)
+        property = self.config.get_property(self.type)
         query_where = 'WHERE {'
 
         if restriction is not None:
             query_where += restriction + ' . '
 
-        query_where += '?{} {} {}{}'.format(self.config.get_var(self.type), self.config.get_property(self.type), '?shape', ' .}')
+        if property is not None:
+            query_where += property + ' . '
+
+        query_where += '}'
 
         return query_where
 
