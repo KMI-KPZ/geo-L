@@ -113,19 +113,19 @@ def compare(measures, source_item, target_index):
             target_geometry = loads(target_item[1])
 
             if target_geometry.is_valid:
-                if 'contains' in measures and target_geometry.contains(item):
+                if 'contains' in measures and target_geometry.contains(geometry):
                     results.append('"{}", "contains", "{}"'.format(uri, target_uri))
 
-                if 'crosses' in measures and item.crosses(target_geometry):
+                if 'crosses' in measures and geometry.crosses(target_geometry):
                     results.append('"{}", "crosses", "{}"'.format(uri, target_uri))
 
-                if 'equals' in measures and item.equals(target_geometry):
+                if 'equals' in measures and geometry.equals(target_geometry):
                     results.append('"{}", "equals", "{}"'.format(uri, target_uri))
 
-                if 'overlaps' in measures and item.overlaps(target_geometry):
+                if 'overlaps' in measures and geometry.overlaps(target_geometry):
                     results.append('"{}", "overlaps", "{}"'.format(uri, target_uri))
 
-                if 'touches' in measures and item.touches(target_geometry):
+                if 'touches' in measures and geometry.touches(target_geometry):
                     results.append('"{}", "touches", "{}"'.format(uri, target_uri))
 
                 if 'within' in measures and geometry.within(target_geometry):
