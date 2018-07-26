@@ -100,7 +100,14 @@ def compare(measures, source_item, target_index):
     geometry = loads(item[1])
 
     if geometry.is_valid:
-        for j in target_index.intersection(geometry.coords[0]):
+        geometry_coords = None
+
+        if geometry.geometryType() == 'Polygon' or geometry.geometryType() == 'MultiPolygon':
+            geometry_coords = geometry.bounds
+        else:
+            geometry_coords = geometry.coords[0]
+
+        for j in target_index.intersection(geometry_coords):
             target_item = target_data[j]
             target_uri = target_item[0]
             target_geometry = loads(target_item[1])
