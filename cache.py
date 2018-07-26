@@ -80,7 +80,7 @@ class Cache:
 
                         if split == self.config.get_var_shape(self.type):
                             shape_idx = split_index
-                elif idx > 0:
+                else:
                     items = [None, None]
 
                     for split_index, split in enumerate(item_split):
