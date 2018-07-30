@@ -3,6 +3,7 @@
 
 from collections import OrderedDict
 from ctypes import c_char_p
+from logging import ERROR, INFO
 from multiprocessing import cpu_count
 from multiprocessing.pool import Pool
 from os.path import join
@@ -14,7 +15,6 @@ from cache import FastRetree
 from logger import ErrorLogger, InfoLogger, ResultLogger
 
 import fiona
-import logging
 import time
 
 
@@ -44,7 +44,7 @@ class Mapper:
         if cpus <= 0:
             cpus = 2
 
-        self.info_logger.logger.log(logging.INFO, "Mapping started...")
+        self.info_logger.logger.log(INFO, "Mapping started...")
         # TODO Add check for length and cpu_count() to set chunksize accordingly (Check min chunksize)
         chunks = [self.source[x:x + 10000] for x in range(0, len(self.source), 10000)]
         args = []
@@ -65,15 +65,15 @@ class Mapper:
             if len(chunk[1]) > 0:
                 for item in chunk[1]:
                     if item not in errors:
-                        self.error_logger.logger.log(logging.ERROR, item)
+                        self.error_logger.logger.log(ERROR, item)
                         errors.append(item)
 
         self.target_index.close()
 
         end = time.time()
 
-        self.info_logger.logger.log(logging.INFO, "Mapping took: {}s".format(round(end - start, 4)))
-        self.info_logger.logger.log(logging.INFO, "{} mappings found".format(count))
+        self.info_logger.logger.log(INFO, "Mapping took: {}s".format(round(end - start, 4)))
+        self.info_logger.logger.log(INFO, "{} mappings found".format(count))
 
 
 def async_map(measures, source_shapes, target_index):
