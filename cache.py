@@ -3,6 +3,7 @@
 
 from csv import reader, writer
 from fiona import collection
+from logging import INFO
 from os.path import join, isfile
 from rtree import Rtree
 from rtree.index import Index
@@ -11,7 +12,6 @@ from shapely.wkt import loads
 
 from logger import InfoLogger
 
-import logging
 import pickle
 import time
 
@@ -26,8 +26,8 @@ class Cache:
 
     def create_cache_chunks(self, index=False):
         if isfile(join('cache', '{}.csv'.format(self.sparql.query_hash))):
-            self.info_logger.logger.log(logging.INFO, "Cache file {}.csv for query already exists".format(self.sparql.query_hash))
-            self.info_logger.logger.log(logging.INFO, "Loading cache file...")
+            self.info_logger.logger.log(INFO, "Cache file {}.csv for query already exists".format(self.sparql.query_hash))
+            self.info_logger.logger.log(INFO, "Loading cache file...")
             with open('cache/{}.csv'.format(self.sparql.query_hash), 'r') as cache_file:
                 items = list(reader(cache_file, delimiter=';'))
 
@@ -50,7 +50,7 @@ class Cache:
                 chunksize = limit - offset
                 run = False
 
-            self.info_logger.logger.log(logging.INFO, "Getting statements from {} to {}".format(offset, offset + chunksize))
+            self.info_logger.logger.log(INFO, "Getting statements from {} to {}".format(offset, offset + chunksize))
             result = self.sparql.query(offset, chunksize)
             result_info = result.info()
 
@@ -60,7 +60,7 @@ class Cache:
                 if max_chunksize_server and max_chunksize_server < chunksize:
                     chunksize = max_chunksize_server
                     self.info_logger.logger.log(
-                        logging.INFO, "Max server rows is smaller than chunksize, new chunksize is {}".format(max_chunksize_server))
+                        INFO, "Max server rows is smaller than chunksize, new chunksize is {}".format(max_chunksize_server))
 
             offset = offset + chunksize
 
@@ -81,21 +81,10 @@ class Cache:
                         if split == self.config.get_var_shape(self.type):
                             shape_idx = split_index
                 else:
-                    items = [None, None]
-
-                    for split_index, split in enumerate(item_split):
-                        split = split.replace('"', '').replace('\n', '')
-
-                        if split_index == uri_idx:
-                            items[0] = split
-                        elif split_index == shape_idx:
-                            items[1] = split
-
-                    if items[0] and items[1]:
-                        results.append(items)
+                    results.append([item_split[uri_idx].replace('"', '').replace('\n', ''), item_split[shape_idx].replace('"', '').replace('\n', '')])
 
         end = time.time()
-        self.info_logger.logger.log(logging.INFO, "Retrieving statements took {}".format(round(end - start, 4)))
+        self.info_logger.logger.log(INFO, "Retrieving statements took {}".format(round(end - start, 4)))
 
         self.write_cache_file(results)
 
@@ -105,14 +94,14 @@ class Cache:
         return results
 
     def write_cache_file(self, results):
-        self.info_logger.logger.log(logging.INFO, "Writing cache file: {}.csv".format(self.sparql.query_hash))
+        self.info_logger.logger.log(INFO, "Writing cache file: {}.csv".format(self.sparql.query_hash))
 
         with open(join('cache', '{}.csv'.format(self.sparql.query_hash)), 'w') as cache_file:
             csvWriter = writer(cache_file, delimiter=';')
             csvWriter.writerows(results)
 
     def write_index_file(self, results):
-        self.info_logger.logger.log(logging.INFO, "Writing index file for {}".format(self.sparql.query_hash))
+        self.info_logger.logger.log(INFO, "Writing index for {}".format(self.sparql.query_hash))
 
         idx = FastRetree(join('cache', self.sparql.query_hash), rtree_generator(results))
         idx.close()
