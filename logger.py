@@ -25,7 +25,7 @@ class ResultLogger:
         self.logger.setLevel(logging.INFO)
         self.logger.propagate = False
 
-        logger_handler = logging.FileHandler(join('output', '{}_{}.log'.format(source_hash, target_hash)))
+        logger_handler = logging.FileHandler(join('output', '{}_{}.log'.format(source_hash, target_hash)), mode='w')
         logger_handler.setLevel(logging.INFO)
         logger_formater = logging.Formatter('%(message)s')
         logger_handler.setFormatter(logger_formater)
