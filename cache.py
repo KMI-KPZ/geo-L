@@ -66,8 +66,10 @@ class Cache:
 
             uri_idx = -1
             shape_idx = -1
+            size = 0
 
             for idx, item in enumerate(result):
+                size = idx
                 item_decoded = item.decode('utf-8')
                 item_split = item_decoded.split('","')
 
@@ -82,6 +84,9 @@ class Cache:
                             shape_idx = split_index
                 else:
                     results.append([item_split[uri_idx].replace('"', '').replace('\n', ''), item_split[shape_idx].replace('"', '').replace('\n', '')])
+
+            if size < chunksize:
+                break
 
         end = time.time()
         self.info_logger.logger.log(INFO, "Retrieving statements took {}".format(round(end - start, 4)))
