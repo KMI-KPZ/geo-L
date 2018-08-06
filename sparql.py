@@ -71,8 +71,8 @@ class SPARQL:
     def clean_query(self, query):
         query = sub('\n', ' ', query)
         query = sub('[ ]+', ' ', query)
-        query = sub('[ ]{[ ]', ' {', query)
-        query = sub('[ ]}[ ]', '} ', query)
+        query = sub('[ ]?{[ ]?', ' {', query)
+        query = sub('[ ]?}[ ]?', '} ', query)
 
         return query
 
