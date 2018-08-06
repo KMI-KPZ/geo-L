@@ -1,7 +1,7 @@
 {
     "source": {
         "id": "spoi",
-        "rawquery": "prefix geos: <http://www.opengis.net/ont/geosparql#> prefix spoi: <http://www.openvoc.eu/poi#> prefix sponto: <http://gis.zcu.cz/SPOI/Ontology#> select distinct ?x ?geoloc where {?x spoi:class ?class . ?x geos:asWKT ?geoloc . }",
+        "rawquery": "prefix geos: <http://www.opengis.net/ont/geosparql#> prefix spoi: <http://www.openvoc.eu/poi#> prefix sponto: <http://gis.zcu.cz/SPOI/Ontology#> select distinct ?x ?geoloc where {?x geos:asWKT ?geoloc . }",
         "endpoint": "https://www.foodie-cloud.org/sparql",
         "var": {
             "uri": "x",
