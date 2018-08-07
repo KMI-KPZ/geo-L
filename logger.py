@@ -43,6 +43,11 @@ class InfoLogger:
         logger_handler.setFormatter(logger_formater)
         self.logger.addHandler(logger_handler)
 
+        logger_handler = logging.FileHandler(join('logs', '{}.log'.format(query_hash)))
+        logger_handler.setLevel(logging.INFO)
+        logger_handler.setFormatter(logger_formater)
+        self.logger.addHandler(logger_handler)
+
 
 def load_logfile(query_hash, error_type):
     try:
