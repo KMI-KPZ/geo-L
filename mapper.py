@@ -19,7 +19,7 @@ import time
 
 
 class Mapper:
-    def __init__(self, config, source_sparql, target_sparql, source, target):
+    def __init__(self, logger, config, source_sparql, target_sparql, source, target):
         self.config = config
         self.source_sparql = source_sparql
         self.target_sparql = target_sparql
@@ -33,7 +33,7 @@ class Mapper:
         target_data = self.target
 
         self.error_logger = ErrorLogger('ErrorLogger', 'errors', '{}_{}'.format(source_sparql.get_query_hash(), target_sparql.get_query_hash()))
-        self.info_logger = InfoLogger('InfoLogger', '{}_{}'.format(source_sparql.get_query_hash(), target_sparql.get_query_hash()))
+        self.info_logger = logger
         self.result_logger = ResultLogger('ResultLogger', source_sparql.get_query_hash(), target_sparql.get_query_hash())
 
     def map(self):
