@@ -8,6 +8,7 @@ from os.path import exists, isdir
 
 from cache import Cache
 from config import Config, ConfigNotValidError
+from logger import InfoLogger
 from mapper import Mapper
 from sparql import SPARQL
 
@@ -41,13 +42,15 @@ def main():
         source_sparql = SPARQL(config, 'source')
         target_sparql = SPARQL(config, 'target')
 
-        source_cache = Cache(config, source_sparql, 'source')
+        info_logger = InfoLogger('InfoLogger', '{}_{}'.format(source_sparql.get_query_hash(), target_sparql.get_query_hash()))
+
+        source_cache = Cache(info_logger,  config, source_sparql, 'source')
         source = source_cache.create_cache_chunks(False)
 
-        target_cache = Cache(config, target_sparql, 'target')
+        target_cache = Cache(info_logger, config, target_sparql, 'target')
         target = target_cache.create_cache_chunks(True)
 
-        mapper = Mapper(config, source_sparql, target_sparql, source, target)
+        mapper = Mapper(info_logger, config, source_sparql, target_sparql, source, target)
         mapper.map()
     except FileNotFoundError as e:
         print(e)
