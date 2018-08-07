@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from csv import reader, writer
+from csv import field_size_limit, reader, writer
 from fiona import collection
 from logging import INFO
 from os.path import join, isfile
@@ -9,6 +9,7 @@ from rtree import Rtree
 from rtree.index import Index
 from shapely.geometry import mapping, shape
 from shapely.wkt import loads
+from sys import maxsize
 
 from logger import InfoLogger
 
@@ -17,17 +18,20 @@ import time
 
 
 class Cache:
-    def __init__(self, config, sparql, type):
+    def __init__(self, logger, config, sparql, type):
         self.config = config
         self.sparql = sparql
         self.type = type
 
-        self.info_logger = InfoLogger('InfoLogger', sparql.get_query_hash())
+        self.info_logger = logger
+
+        self.set_max_field_size_limit()  # Needed for very long fields
 
     def create_cache_chunks(self, index=False):
         if isfile(join('cache', '{}.csv'.format(self.sparql.query_hash))):
             self.info_logger.logger.log(INFO, "Cache file {}.csv for query already exists".format(self.sparql.query_hash))
             self.info_logger.logger.log(INFO, "Loading cache file...")
+
             with open('cache/{}.csv'.format(self.sparql.query_hash), 'r') as cache_file:
                 items = list(reader(cache_file, delimiter=';'))
 
@@ -110,6 +114,17 @@ class Cache:
 
         idx = FastRetree(join('cache', self.sparql.query_hash), rtree_generator(results))
         idx.close()
+
+    def set_max_field_size_limit(self):
+        dec = True
+        maxInt = maxsize
+
+        while dec:
+            try:
+                field_size_limit(maxInt)
+                dec = False
+            except OverflowError:
+                maxInt = int(maxInt / 10)
 
 
 class FastRetree(Rtree):
