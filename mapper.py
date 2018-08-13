@@ -51,7 +51,7 @@ class Mapper:
         results = []
         errors = []
 
-        with Pool(processes=cpus, maxtasksperchild=1000) as pool:
+        with Pool(processes=cpus, maxtasksperchild=5) as pool:
             for chunk in chunks:
                 args.append((self.measures, chunk, self.target_index))
 
