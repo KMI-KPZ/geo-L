@@ -93,7 +93,7 @@ class Cache:
                 break
 
         end = time.time()
-        self.info_logger.logger.log(INFO, "Retrieving statements took {}".format(round(end - start, 4)))
+        self.info_logger.logger.log(INFO, "Retrieving statements took {}s".format(round(end - start, 4)))
 
         self.write_cache_file(results)
 
