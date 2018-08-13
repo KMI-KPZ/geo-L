@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from json import JSONDecodeError
 from os import makedirs
 from os.path import exists, isdir
+from urllib.error import HTTPError
 
 from cache import Cache
 from config import Config, ConfigNotValidError
@@ -58,8 +59,8 @@ def main():
         print(e)
     except ConfigNotValidError as e:
         print(e)
-    # except Exception as e:
-    #    print(e)
+    except HTTPError as e:
+        print(e)
 
 
 if __name__ == "__main__":
