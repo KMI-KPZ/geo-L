@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from collections import OrderedDict
-from ctypes import c_char_p
 from logging import ERROR, INFO
 from multiprocessing import cpu_count
 from multiprocessing.pool import Pool
