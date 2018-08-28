@@ -21,7 +21,15 @@ class SPARQL:
 
     def build_query(self, offset, limit=None):
         if self.config.get_rawquery(self.type) is not None:
-            return self.config.get_rawquery(self.type)
+            query = self.config.get_rawquery(self.type)
+            query_offset = 'OFFSET {}'.format(offset)
+            query_limit = 'LIMIT {}'.format(limit)
+            query = '{} {}'.format(query, query_offset) # TODO Offset, limit test in config (rawquery should not contain offset and limit)
+
+            if limit is None:
+                return query
+
+            return '{} {}'.format(query, query_limit)
         else:
             query_prefixes = self.buid_prefixes()
             query_select = 'SELECT DISTINCT ?{} ?{}'.format(self.config.get_var_uri(self.type), self.config.get_var_shape(self.type))
@@ -31,7 +39,7 @@ class SPARQL:
             query_limit = 'LIMIT {}'.format(limit)
             query = '{} {} {} {} {}'.format(query_prefixes, query_select, query_from, query_where, query_offset)
 
-            if query_limit is None:
+            if limit is None:
                 return query
 
             return '{} {}'.format(query, query_limit)
