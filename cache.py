@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from csv import field_size_limit, reader, writer
-from fiona import collection
+from csv import field_size_limit
+from geopandas import GeoDataFrame
+from io import StringIO
 from logging import INFO
 from os.path import join, isfile
-from rtree import Rtree
-from rtree.index import Index
-from shapely.geometry import mapping, shape
+from pandas import concat, read_csv
 from shapely.wkt import loads
 from sys import maxsize
 
@@ -27,24 +26,21 @@ class Cache:
 
         self.set_max_field_size_limit()  # Needed for very long fields
 
-    def create_cache_chunks(self, index=False):
+    def create_cache(self):
         if isfile(join('cache', '{}.csv'.format(self.sparql.query_hash))):
             self.info_logger.logger.log(INFO, "Cache file {}.csv for query already exists".format(self.sparql.query_hash))
             self.info_logger.logger.log(INFO, "Loading cache file...")
 
-            with open('cache/{}.csv'.format(self.sparql.query_hash), 'r') as cache_file:
-                items = list(reader(cache_file, delimiter=';'))
-
-                if index:
-                    if not isfile(join('cache', '{}.idx'.format(self.sparql.query_hash))):
-                        self.write_index_file(items)
-
-                return items
+            items = read_csv('cache/{}.csv'.format(self.sparql.query_hash))
+            geo_data_frame = GeoDataFrame(items)
+            geo_data_frame = GeoDataFrame(geo_data_frame[self.config.get_var_shape(self.type)].apply(lambda x: loads(x)))
+            geo_data_frame = geo_data_frame.set_geometry(self.config.get_var_shape(self.type))
+            return geo_data_frame
 
         offset = self.config.get_offset(self.type)
         limit = self.config.get_limit(self.type)
         chunksize = self.config.get_chunksize(self.type)
-        results = []
+        results = None
         run = True
 
         start = time.time()
@@ -68,26 +64,17 @@ class Cache:
 
             offset = offset + chunksize
 
-            uri_idx = -1
-            shape_idx = -1
-            size = 0
+            csv_result = StringIO(result.convert().decode('utf-8'))
+            data_frame = read_csv(csv_result)
+            geo_data_frame = GeoDataFrame(data_frame)
+            geo_data_frame = GeoDataFrame(geo_data_frame[self.config.get_var_shape(self.type)].apply(lambda x: loads(x)))
 
-            for idx, item in enumerate(result):
-                size = idx
-                item_decoded = item.decode('utf-8')
-                item_split = item_decoded.split('","')
+            size = len(geo_data_frame)
 
-                if idx == 0:
-                    for split_index, split in enumerate(item_split):
-                        split = split.replace('"', '').replace('\n', '')
-
-                        if split == self.config.get_var_uri(self.type):
-                            uri_idx = split_index
-
-                        if split == self.config.get_var_shape(self.type):
-                            shape_idx = split_index
-                else:
-                    results.append([item_split[uri_idx].replace('"', '').replace('\n', ''), item_split[shape_idx].replace('"', '').replace('\n', '')])
+            if results is None:
+                results = geo_data_frame
+            else:
+                results = GeoDataFrame(concat([results, geo_data_frame]))
 
             if size < chunksize:
                 break
@@ -97,23 +84,12 @@ class Cache:
 
         self.write_cache_file(results)
 
-        if index:
-            self.write_index_file(results)
-
+        results = results.set_geometry(self.config.get_var_shape(self.type))
         return results
 
     def write_cache_file(self, results):
         self.info_logger.logger.log(INFO, "Writing cache file: {}.csv".format(self.sparql.query_hash))
-
-        with open(join('cache', '{}.csv'.format(self.sparql.query_hash)), 'w') as cache_file:
-            csvWriter = writer(cache_file, delimiter=';')
-            csvWriter.writerows(results)
-
-    def write_index_file(self, results):
-        self.info_logger.logger.log(INFO, "Writing index for {}".format(self.sparql.query_hash))
-
-        idx = FastRetree(join('cache', self.sparql.query_hash), rtree_generator(results))
-        idx.close()
+        results.to_csv(join('cache', '{}.csv'.format(self.sparql.query_hash)), index=False)
 
     def set_max_field_size_limit(self):
         dec = True
@@ -125,17 +101,3 @@ class Cache:
                 dec = False
             except OverflowError:
                 maxInt = int(maxInt / 10)
-
-
-class FastRetree(Rtree):
-    def dumps(self, obj):
-        return pickle.dumps(obj, -1)
-
-
-def rtree_generator(items):
-    for i, item in enumerate(items):
-        uri = item[0]
-        geometry = loads(item[1])
-
-        if not geometry.is_empty:  # Exclude empty geometry
-            yield (i, geometry.bounds, None)

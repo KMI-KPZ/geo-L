@@ -46,10 +46,10 @@ def main():
         info_logger = InfoLogger('InfoLogger', '{}_{}'.format(source_sparql.get_query_hash(), target_sparql.get_query_hash()))
 
         source_cache = Cache(info_logger,  config, source_sparql, 'source')
-        source = source_cache.create_cache_chunks(False)
+        source = source_cache.create_cache()
 
         target_cache = Cache(info_logger, config, target_sparql, 'target')
-        target = target_cache.create_cache_chunks(True)
+        target = target_cache.create_cache()
 
         mapper = Mapper(info_logger, config, source_sparql, target_sparql, source, target)
         mapper.map()
