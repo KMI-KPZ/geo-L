@@ -20,10 +20,6 @@ class Mapper:
         self.target = target
         self.measures = config.get_measures()
 
-        # Shared data necessary for RAM usage
-        global target_data
-        target_data = self.target
-
         self.error_logger = ErrorLogger('ErrorLogger', 'errors', '{}_{}'.format(source_sparql.get_query_hash(), target_sparql.get_query_hash()))
         self.info_logger = logger
         self.result_logger = ResultLogger('ResultLogger', source_sparql.get_query_hash(), target_sparql.get_query_hash())
@@ -31,7 +27,7 @@ class Mapper:
     def map(self):
         self.info_logger.logger.log(INFO, "Mapping started...")
         start = time.time()
-        results = sjoin(self.source, target_data, how='inner', op='within')
+        results = sjoin(self.source, self.target, how='inner', op='within')
         end = time.time()
 
         self.info_logger.logger.log(INFO, "Mapping took: {}s".format(round(end - start, 4)))
