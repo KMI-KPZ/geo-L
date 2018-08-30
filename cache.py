@@ -33,7 +33,8 @@ class Cache:
 
             items = read_csv('cache/{}.csv'.format(self.sparql.query_hash))
             geo_data_frame = GeoDataFrame(items)
-            geo_data_frame = GeoDataFrame(geo_data_frame[self.config.get_var_shape(self.type)].apply(lambda x: loads(x)))
+            geo_data_frame[self.config.get_var_shape(self.type)] = GeoDataFrame(
+                geo_data_frame[self.config.get_var_shape(self.type)].apply(lambda x: loads(x)))
             geo_data_frame = geo_data_frame.set_geometry(self.config.get_var_shape(self.type))
             return geo_data_frame
 
@@ -67,7 +68,8 @@ class Cache:
             csv_result = StringIO(result.convert().decode('utf-8'))
             data_frame = read_csv(csv_result)
             geo_data_frame = GeoDataFrame(data_frame)
-            geo_data_frame = GeoDataFrame(geo_data_frame[self.config.get_var_shape(self.type)].apply(lambda x: loads(x)))
+            geo_data_frame[self.config.get_var_shape(self.type)] = GeoDataFrame(
+                geo_data_frame[self.config.get_var_shape(self.type)].apply(lambda x: loads(x)))
 
             size = len(geo_data_frame)
 
@@ -85,6 +87,7 @@ class Cache:
         self.write_cache_file(results)
 
         results = results.set_geometry(self.config.get_var_shape(self.type))
+        results = results.set_index(self.config.get_var_uri(self.type))
         return results
 
     def write_cache_file(self, results):
