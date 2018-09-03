@@ -13,7 +13,7 @@
     },
     "target": {
         "id": "nuts",
-        "rawquery": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX ramon: <http://rdfdata.eionet.europa.eu/ramon/ontology/> PREFIX ngeo: <http://geovocab.org/geometry#> PREFIX wgeo: <http://www.w3.org/2003/01/geo/wgs84_pos#> PREFIX nuts: <http://nuts.geovocab.org/> SELECT ?s ?label ?geoType(concat(\"\\\"POLYGON((\",group_concat(concat(?long,\" \",?lat) ; separator = \",\"),\"))\\\"^^<http://www.openlinksw.com/schemas/virtrdf#Geometry>\") AS ?geoasWKT) FROM <http://nuts.geovocab.org/> WHERE { ?s a ramon:NUTSRegion . ?s rdfs:label ?label . ?s ngeo:geometry ?geom . ?geom a ?geoType . ?geom ngeo:exterior ?ext . ?ext a ?extType . ?ext ngeo:posList ?posList . ?posList (rdf:rest|rdf:first)* ?point . ?point wgeo:long ?long . ?point wgeo:lat ?lat . } group by ?s ?label ?geoType",
+        "rawquery": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX ramon: <http://rdfdata.eionet.europa.eu/ramon/ontology/> PREFIX ngeo: <http://geovocab.org/geometry#> PREFIX wgeo: <http://www.w3.org/2003/01/geo/wgs84_pos#> PREFIX nuts: <http://nuts.geovocab.org/> SELECT ?s ?label ?geoType(concat(\"POLYGON((\",group_concat(concat(?long,\" \",?lat) ; separator = \",\"),\"))\") AS ?geoasWKT) FROM <http://nuts.geovocab.org/> WHERE { ?s a ramon:NUTSRegion . ?s rdfs:label ?label . ?s ngeo:geometry ?geom . ?geom a ?geoType . ?geom ngeo:exterior ?ext . ?ext a ?extType . ?ext ngeo:posList ?posList . ?posList (rdf:rest|rdf:first)* ?point . ?point wgeo:long ?long . ?point wgeo:lat ?lat . } group by ?s ?label ?geoType",
         "endpoint": "https://www.foodie-cloud.org/sparql",
         "var": {
             "uri": "s",
