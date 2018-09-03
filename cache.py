@@ -32,11 +32,11 @@ class Cache:
             self.info_logger.logger.log(INFO, "Loading cache file...")
 
             items = read_csv('cache/{}.csv'.format(self.sparql.query_hash))
-            geo_data_frame = GeoDataFrame(items)
-            geo_data_frame[self.config.get_var_shape(self.type)] = GeoDataFrame(
-                geo_data_frame[self.config.get_var_shape(self.type)].apply(lambda x: loads(x)))
-            geo_data_frame = geo_data_frame.set_geometry(self.config.get_var_shape(self.type))
-            return geo_data_frame
+            items = GeoDataFrame(items)
+            items[self.config.get_var_shape(self.type)] = GeoDataFrame(items[self.config.get_var_shape(self.type)].apply(lambda x: loads(x)))
+            items = items.set_geometry(self.config.get_var_shape(self.type))
+            items = items.set_index(self.config.get_var_uri(self.type))
+            return items
 
         offset = self.config.get_offset(self.type)
         limit = self.config.get_limit(self.type)
@@ -67,16 +67,13 @@ class Cache:
 
             csv_result = StringIO(result.convert().decode('utf-8'))
             data_frame = read_csv(csv_result)
-            geo_data_frame = GeoDataFrame(data_frame)
-            geo_data_frame[self.config.get_var_shape(self.type)] = GeoDataFrame(
-                geo_data_frame[self.config.get_var_shape(self.type)].apply(lambda x: loads(x)))
 
-            size = len(geo_data_frame)
+            size = len(data_frame)
 
             if results is None:
-                results = geo_data_frame
+                results = data_frame
             else:
-                results = GeoDataFrame(concat([results, geo_data_frame]))
+                results = concat([results, data_frame])
 
             if size < chunksize:
                 break
@@ -86,6 +83,8 @@ class Cache:
 
         self.write_cache_file(results)
 
+        results = GeoDataFrame(results)
+        results[self.config.get_var_shape(self.type)] = GeoDataFrame(results[self.config.get_var_shape(self.type)].apply(lambda x: loads(x)))
         results = results.set_geometry(self.config.get_var_shape(self.type))
         results = results.set_index(self.config.get_var_uri(self.type))
         return results
