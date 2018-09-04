@@ -3,7 +3,8 @@
 
 from csv import field_size_limit
 from geopandas import GeoDataFrame
-from io import StringIO
+from gzip import GzipFile
+from io import StringIO, BytesIO
 from logging import INFO
 from os.path import join, isfile
 from pandas import concat, read_csv
@@ -64,10 +65,14 @@ class Cache:
                         INFO, "Max server rows is smaller than chunksize, new chunksize is {}".format(max_chunksize_server))
 
             offset = offset + chunksize
+            
+            if 'content-encoding' in result_info and result_info['content-encoding'] == 'gzip':
+                csv_result = self.gunzip_response(result)
+            else:
+                csv_result = StringIO(result.convert().decode('utf-8'))
 
-            csv_result = StringIO(result.convert().decode('utf-8'))
+            result.response.close()
             data_frame = read_csv(csv_result)
-
             size = len(data_frame)
 
             if results is None:
@@ -103,3 +108,12 @@ class Cache:
                 dec = False
             except OverflowError:
                 maxInt = int(maxInt / 10)
+
+    def gunzip_response(self, response):
+        buffer = BytesIO()
+        buffer.write(response.response.read())
+        buffer.seek(0)
+
+        with GzipFile(fileobj=buffer, mode='rb') as unzipped:
+            result = unzipped.read()
+            return StringIO(result.decode('utf-8'))

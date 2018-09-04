@@ -24,7 +24,7 @@ class SPARQL:
             query = self.config.get_rawquery(self.type)
             query_offset = 'OFFSET {}'.format(offset)
             query_limit = 'LIMIT {}'.format(limit)
-            query = '{} {}'.format(query, query_offset) # TODO Offset, limit test in config (rawquery should not contain offset and limit)
+            query = '{} {}'.format(query, query_offset)  # TODO Offset, limit test in config (rawquery should not contain offset and limit)
 
             if limit is None:
                 return query
@@ -86,6 +86,7 @@ class SPARQL:
 
     def query(self, offset, limit=None):
         sparql = SPARQLWrapper(self.config.get_endpoint(self.type))
+        sparql.customHttpHeaders['Accept-Encoding'] = 'gzip'
         query = self.build_query(offset, limit)
         sparql.setQuery(query)
         sparql.setReturnFormat(CSV)
