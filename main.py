@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from json import JSONDecodeError
 from os import makedirs
 from os.path import exists, isdir
+from sys import path
 from urllib.error import HTTPError
 
 from cache import Cache
@@ -12,6 +13,8 @@ from config import Config, ConfigNotValidError
 from logger import InfoLogger
 from mapper import Mapper
 from sparql import SPARQL
+
+path.append("${HOME}/.local/lib/python3.7/site-packages/")
 
 
 def get_arguments():
