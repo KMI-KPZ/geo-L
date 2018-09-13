@@ -65,7 +65,7 @@ class Cache:
                         INFO, "Max server rows is smaller than chunksize, new chunksize is {}".format(max_chunksize_server))
 
             offset = offset + chunksize
-            
+
             if 'content-encoding' in result_info and result_info['content-encoding'] == 'gzip':
                 csv_result = self.gunzip_response(result)
             else:
@@ -85,6 +85,10 @@ class Cache:
 
         end = time.time()
         self.info_logger.logger.log(INFO, "Retrieving statements took {}s".format(round(end - start, 4)))
+
+        if results.empty:
+            self.info_logger.logger.log(INFO, "Result of {} is empty".format(self.type))
+            return None
 
         self.write_cache_file(results)
 

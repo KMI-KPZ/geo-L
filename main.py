@@ -54,8 +54,9 @@ def main():
         target_cache = Cache(info_logger, config, target_sparql, 'target')
         target = target_cache.create_cache()
 
-        mapper = Mapper(info_logger, config, source_sparql, target_sparql, source, target)
-        mapper.map()
+        if source is not None and target is not None:
+            mapper = Mapper(info_logger, config, source_sparql, target_sparql, source, target)
+            mapper.map()
     except FileNotFoundError as e:
         print(e)
     except JSONDecodeError as e:
