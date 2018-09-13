@@ -3,7 +3,8 @@
 ## Installation
 
 1. Install Python3
-2. Install the following packages: pandas, geopandas, shapely and SPARQLWrapper
+2. Install libspatialindex
+3. Install the following packages: pandas, geopandas, shapely and SPARQLWrapper
 
 To get faster runtime use geopandas-cython. To intall it use the commands below.
 ```bash
