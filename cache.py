@@ -34,6 +34,9 @@ class Cache:
         chunksize = self.config.get_chunksize(self.type)
         results = None
 
+        if limit > 0 and chunksize > limit:
+            chunksize = limit - offset
+
         if isfile(join('cache', '{}.csv'.format(self.sparql.query_hash))):
             self.info_logger.logger.log(INFO, "Cache file {}.csv for query already exists".format(self.sparql.query_hash))
             self.info_logger.logger.log(INFO, "Loading cache file...")
