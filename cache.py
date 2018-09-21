@@ -65,8 +65,9 @@ class Cache:
                     results.reset_index(drop=True)
 
             if limit < 0 and more_results:
-                test = self.download_results(results, max_offset + 1, limit, chunksize)
-                print(len(test))
+                new_data = True
+                data_frame = self.download_results(results, max_offset + 1, limit, chunksize)
+                results = concat([results, data_frame])
 
             if new_data:
                 self.write_cache_file(results)
