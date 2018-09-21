@@ -22,13 +22,15 @@ class SPARQL:
     def build_query(self, offset, limit=None):
         if self.config.get_rawquery(self.type) is not None:
             query = self.config.get_rawquery(self.type)
-            query_offset = 'OFFSET {}'.format(offset)
-            query_limit = 'LIMIT {}'.format(limit)
-            query = '{} {}'.format(query, query_offset)  # TODO Offset, limit test in config (rawquery should not contain offset and limit)
+
+            if offset > 0:
+                query_offset = 'OFFSET {}'.format(offset)
+                query = '{} {}'.format(query, query_offset)  # TODO Offset, limit test in config (rawquery should not contain offset and limit)
 
             if limit is None:
                 return query
 
+            query_limit = 'LIMIT {}'.format(limit)
             return '{} {}'.format(query, query_limit)
         else:
             query_prefixes = self.buid_prefixes()
@@ -106,5 +108,5 @@ class SPARQL:
         return None
 
     def get_query_hash(self):
-        query = self.clean_query(self.build_query(self.config.get_offset(self.type), self.config.get_limit(self.type)))
+        query = self.clean_query(self.build_query(0))
         return md5(query.encode('utf-8')).hexdigest()
