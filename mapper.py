@@ -33,4 +33,5 @@ class Mapper:
         self.info_logger.logger.log(INFO, "Mapping took: {}s".format(round(end - start, 4)))
         self.info_logger.logger.log(INFO, "{} mappings found".format(len(results)))
 
-        print(results.head())
+        results.insert(1, 'within', 'within')
+        self.result_logger.logger.info(results.to_csv(columns=['within', 'index_right'], header=False, index=True, index_label=False))
