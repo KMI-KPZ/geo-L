@@ -46,7 +46,7 @@ class Cache:
             max_offset = results.loc[results['offset'].idxmax()]['offset']
             more_results = self.check_more_results(max_offset + 1)
 
-            if (more_results or offset + limit < max_offset) and limit > 0:
+            if limit > 0 and (more_results or offset + limit < max_offset):
                 offsets = Series(arange(offset, offset + limit))
             else:
                 offsets = Series(arange(offset, max_offset))
