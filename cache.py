@@ -97,10 +97,14 @@ class Cache:
         run = True
 
         while(run):
+            current_max = offset + chunksize
+
             if limit > 0 and offset + chunksize >= start_offset + limit:
+                chunksize = start_offset + limit - offset
+                current_max = start_offset + limit
                 run = False
 
-            self.info_logger.logger.log(INFO, "Getting statements from {} to {}".format(offset, offset + chunksize))
+            self.info_logger.logger.log(INFO, "Getting statements from {} to {}".format(offset, current_max))
             result = self.sparql.query(offset, chunksize)
             result_info = result.info()
 
