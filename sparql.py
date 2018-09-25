@@ -25,7 +25,7 @@ class SPARQL:
 
             if offset > 0:
                 query_offset = 'OFFSET {}'.format(offset)
-                query = '{} {}'.format(query, query_offset)  # TODO Offset, limit test in config (rawquery should not contain offset and limit)
+                query = '{} {}'.format(query, query_offset)
 
             if limit is None:
                 return query
