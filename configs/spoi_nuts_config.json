@@ -1,7 +1,7 @@
 {
     "source": {
         "id": "spoi",
-        "rawquery": "prefix geos: <http://www.opengis.net/ont/geosparql#> prefix spoi: <http://www.openvoc.eu/poi#> prefix sponto: <http://gis.zcu.cz/SPOI/Ontology#> select distinct ?x ?geoloc where {?x geos:asWKT ?geoloc . }",
+        "rawquery": "PREFIX geos: <http://www.opengis.net/ont/geosparql#> PREFIX lgdo: <http://linkedgeodata.org/ontology/> PREFIX bifi: <http://www.openlinksw.com/schema/sparql/extensions#> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT DISTINCT ?x ?geoloc FROM <http://www.sdi4apps.eu/poi.rdf> WHERE {?x geos:asWKT ?geoloc . }",
         "endpoint": "https://www.foodie-cloud.org/sparql",
         "var": {
             "uri": "x",
