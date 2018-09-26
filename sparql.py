@@ -22,10 +22,8 @@ class SPARQL:
     def build_query(self, offset, limit=None):
         if self.config.get_rawquery(self.type) is not None:
             query = self.config.get_rawquery(self.type)
-
-            if offset > 0:
-                query_offset = 'OFFSET {}'.format(offset)
-                query = '{} {}'.format(query, query_offset)
+            query_offset = 'OFFSET {}'.format(offset)
+            query = '{} {}'.format(query, query_offset)
 
             if limit is None:
                 return query
