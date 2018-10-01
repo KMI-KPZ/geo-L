@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from hashlib import md5
-from re import sub
 from SPARQLWrapper import SPARQLWrapper, CSV
 from SPARQLWrapper.SPARQLExceptions import EndPointInternalError, EndPointNotFound, SPARQLWrapperException, Unauthorized
 
 from logger import ErrorLogger
+
+import re
 
 
 class SPARQL:
@@ -22,6 +23,7 @@ class SPARQL:
     def build_query(self, offset, limit=None):
         if self.config.get_rawquery(self.type) is not None:
             query = self.config.get_rawquery(self.type)
+            query = self.add_filter(query, True)
             query_offset = 'OFFSET {}'.format(offset)
             query = '{} {}'.format(query, query_offset)
 
@@ -31,7 +33,7 @@ class SPARQL:
             query_limit = 'LIMIT {}'.format(limit)
             return '{} {}'.format(query, query_limit)
         else:
-            query_prefixes = self.buid_prefixes()
+            query_prefixes = self.build_prefixes()
             query_select = 'SELECT DISTINCT ?{} ?{}'.format(self.config.get_var_uri(self.type), self.config.get_var_shape(self.type))
             query_from = 'FROM <{}>'.format(self.config.get_graph(self.type))
             query_where = self.build_where()
@@ -44,7 +46,7 @@ class SPARQL:
 
             return '{} {}'.format(query, query_limit)
 
-    def buid_prefixes(self):
+    def build_prefixes(self):
         prefixes = self.config.get_prefixes()
 
         if prefixes is None:
@@ -72,15 +74,38 @@ class SPARQL:
         if property is not None:
             query_where += property + ' . '
 
+        query_where = self.add_filter(query_where)
         query_where += '}'
 
         return query_where
 
+    def add_filter(self, query, rawquery=False):
+        empty_filter = 'FILTER (!contains(str(?{}), \"EMPTY\"))'.format(self.config.get_var_shape(self.type))  # Filter EMPTY geometry
+
+        if rawquery:
+            concat_regex = re.compile('CONCAT')
+            concat_match = concat_regex.search(query.upper())
+
+            if concat_match != None:
+                return query
+
+            where_regex = re.compile('WHERE[ ]?{.*}')
+            where_match = where_regex.search(query.upper())
+
+            if where_match == None:
+                return query
+
+            interval = where_match.span()
+
+            return '{} {}{}'.format(query[:interval[1] - 1], empty_filter, query[interval[1] - 1:])
+        else:
+            return query + empty_filter
+
     def clean_query(self, query):
-        query = sub('\n', ' ', query)
-        query = sub('[ ]+', ' ', query)
-        query = sub('[ ]?{[ ]?', ' {', query)
-        query = sub('[ ]?}[ ]?', '} ', query)
+        query = re.sub('\n', ' ', query)
+        query = re.sub('[ ]+', ' ', query)
+        query = re.sub('[ ]?{[ ]?', ' {', query)
+        query = re.sub('[ ]?}[ ]?', '} ', query)
 
         return query
 
