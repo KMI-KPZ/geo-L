@@ -34,7 +34,7 @@ class Cache:
         results = None
 
         if limit > 0 and chunksize > limit:
-            chunksize = limit - offset
+            chunksize = limit
 
         if isfile(join('cache', '{}.csv'.format(self.sparql.query_hash))):
             self.info_logger.logger.log(INFO, "Cache file {}.csv for query already exists".format(self.sparql.query_hash))
@@ -123,6 +123,7 @@ class Cache:
 
             result.response.close()
             data_frame = read_csv(csv_result)
+            print(len(data_frame))
             data_frame['offset'] = range(offset, offset + len(data_frame))
             size = len(data_frame)
 
