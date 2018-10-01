@@ -123,7 +123,6 @@ class Cache:
 
             result.response.close()
             data_frame = read_csv(csv_result)
-            print(len(data_frame))
             data_frame['offset'] = range(offset, offset + len(data_frame))
             size = len(data_frame)
 
