@@ -60,9 +60,9 @@ class Cache:
                 new_data = True
 
                 for interval in missing_offsets_intervals:
-                    offset = interval[0]
-                    limit = interval[len(interval) - 1] - offset + 1
-                    results = self.download_results(results, offset, limit, chunksize)
+                    interval_offset = interval[0]
+                    limit = interval[len(interval) - 1] - interval_offset + 1
+                    results = self.download_results(results, interval_offset, limit, chunksize)
                     results.sort_values(by='offset')
                     results.reset_index(drop=True)
 
