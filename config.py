@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json
-
 
 class Config:
-    def __init__(self, config_file_path):
-        self.config_file_path = config_file_path
-        self.config = self.load_config()
+    def __init__(self, config):
+        self.config = config
         self.check_config()
-
-    def load_config(self):
-        with open(self.config_file_path, 'r') as config_file:
-            return json.loads(config_file.read())
 
     def check_config(self):
         if 'source' not in self.config:
@@ -159,3 +152,8 @@ class ConfigNotValidError(Exception):
 
     def __str__(self):
         return(self.error)
+
+
+def load_config(config_file_path):
+    with open(config_file_path, 'r') as config_file:
+        return config_file.read()

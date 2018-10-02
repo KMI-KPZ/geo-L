@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from argparse import ArgumentParser
-from json import JSONDecodeError
+from json import JSONDecodeError, loads
 from os import makedirs
 from os.path import exists, isdir
 from sys import path
 from urllib.error import HTTPError
 
 from cache import Cache
-from config import Config, ConfigNotValidError
+from config import Config, ConfigNotValidError, load_config
 from logger import InfoLogger
 from mapper import Mapper
 from sparql import SPARQL
@@ -36,12 +36,13 @@ def create_dirs():
         makedirs('output')
 
 
-def main():
+def run(config_string, to_file=True):
     create_dirs()
+    results = None
 
     try:
-        connfig_file_path = get_arguments()
-        config = Config(connfig_file_path)
+        config_json = loads(config_string)
+        config = Config(config_json)
 
         source_sparql = SPARQL(config, 'source')
         target_sparql = SPARQL(config, 'target')
@@ -56,14 +57,23 @@ def main():
 
         if source is not None and target is not None:
             mapper = Mapper(info_logger, config, source_sparql, target_sparql, source, target)
-            mapper.map()
-    except FileNotFoundError as e:
+            results = mapper.map(to_file)
+    except ConfigNotValidError as e:
+        results = "Config not valid"
+    except HTTPError as e:
         print(e)
     except JSONDecodeError as e:
         print(e)
-    except ConfigNotValidError as e:
-        print(e)
-    except HTTPError as e:
+
+    return results
+
+
+def main():
+    try:
+        connfig_file_path = get_arguments()
+        config = load_config(connfig_file_path)
+        run(config)
+    except FileNotFoundError as e:
         print(e)
 
 
