@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from os.path import join
+from time import time
 
 import logging
 
@@ -34,7 +35,7 @@ class ResultLogger:
 
 class InfoLogger:
     def __init__(self, name, query_hash):
-        self.logger = logging.getLogger('{}_{}'.format(name, query_hash))
+        self.logger = logging.getLogger('{}_{}_{}'.format(name, query_hash, time()))
         self.logger.setLevel(logging.INFO)
 
         logger_formater = logging.Formatter('%(asctime)s - %(message)s')
