@@ -4,6 +4,7 @@
 from geopandas import sjoin
 from logging import ERROR, INFO
 from shapely.wkt import loads
+from pandas import Series
 
 from logger import ErrorLogger, InfoLogger, ResultLogger
 
@@ -24,7 +25,7 @@ class Mapper:
         self.info_logger = logger
         self.result_logger = ResultLogger('ResultLogger', source_sparql.get_query_hash(), target_sparql.get_query_hash())
 
-    def map(self):
+    def map(self, to_file=True):
         self.info_logger.logger.log(INFO, "Mapping started...")
         start = time.time()
         results = sjoin(self.source, self.target, how='inner', op='within')
@@ -34,4 +35,9 @@ class Mapper:
         self.info_logger.logger.log(INFO, "{} mappings found".format(len(results)))
 
         results.insert(1, 'within', 'within')
-        self.result_logger.logger.info(results.to_csv(columns=['within', 'index_right'], header=False, index=True, index_label=False))
+        results_csv = results.to_csv(columns=['within', 'index_right'], header=False, index=True, index_label=False)
+
+        if to_file:
+            self.result_logger.logger.info(results_csv)
+
+        return results_csv
