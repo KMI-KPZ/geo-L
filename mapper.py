@@ -2,13 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from geopandas import sjoin
-from logging import ERROR, INFO
-from shapely.wkt import loads
-from pandas import Series
+from logging import INFO
 
-from logger import ErrorLogger, InfoLogger, ResultLogger
+from logger import InfoLogger, ResultLogger
 
-import fiona
 import time
 
 
@@ -21,7 +18,6 @@ class Mapper:
         self.target = target
         self.measures = config.get_measures()
 
-        self.error_logger = ErrorLogger('ErrorLogger', 'errors', '{}_{}'.format(source_sparql.get_query_hash(), target_sparql.get_query_hash()))
         self.info_logger = logger
         self.result_logger = ResultLogger('ResultLogger', source_sparql.get_query_hash(), target_sparql.get_query_hash())
 
@@ -34,10 +30,27 @@ class Mapper:
         self.info_logger.logger.log(INFO, "Mapping took: {}s".format(round(end - start, 4)))
         self.info_logger.logger.log(INFO, "{} mappings found".format(len(results)))
 
-        results.insert(1, 'within', 'within')
-        results_csv = results.to_csv(columns=['within', 'index_right'], header=False, index=True, index_label=False)
+        formatted_results = self.convert(results)
 
         if to_file:
-            self.result_logger.logger.info(results_csv)
+            self.result_logger.logger.info(formatted_results)
 
-        return results_csv
+        return formatted_results
+
+    def convert(self, results):
+        formatted_results = None
+        result_format = self.config.get_result_format()
+        results.insert(1, 'within', 'http://www.opengis.net/ont/geosparql#sfWithin')
+
+        if result_format == 'turtle':
+            results.insert(2, 'end', '.')
+            results[self.config.get_var_uri('source')] = '<' + results[self.config.get_var_uri('source')].astype(str) + '>'
+            results['within'] = '<' + results['within'].astype(str) + '>'
+            results[self.config.get_var_uri('target')] = '<' + results[self.config.get_var_uri('target')].astype(str) + '>'
+            formatted_results = results.to_csv(columns=[self.config.get_var_uri('source'), 'within', self.config.get_var_uri(
+                'target'), 'end'], header=False, index=False, index_label=False, sep=' ')
+        else:
+            formatted_results = results.to_csv(columns=[self.config.get_var_uri('source'), 'within',
+                                                        self.config.get_var_uri('target')], header=False, index=False, index_label=False)
+
+        return formatted_results
