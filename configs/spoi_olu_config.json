@@ -46,5 +46,6 @@
     },
     "measures": [
         "within"
-    ]
+    ],
+    "result_format": "csv"
 }
