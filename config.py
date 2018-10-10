@@ -133,6 +133,12 @@ class Config:
         else:
             return None
 
+    def get_result_format(self):
+        if 'result_format' in self.config:
+            return self.config['result_format']
+        else:
+            return None
+
     def get_var_uri(self, type):
         if type != 'source' and type != 'target':
             raise Exception("Wrong type (not source or target) specified")
