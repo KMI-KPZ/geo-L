@@ -89,7 +89,6 @@ class Cache:
         results = GeoDataFrame(results)
         results[self.config.get_var_shape(self.type)] = GeoDataFrame(results[self.config.get_var_shape(self.type)].apply(lambda x: loads(x)))
         results = results.set_geometry(self.config.get_var_shape(self.type))
-        results = results.set_index(self.config.get_var_uri(self.type))
         return results
 
     def download_results(self, results, offset, limit, chunksize):
