@@ -5,6 +5,8 @@
 class Config:
     def __init__(self, config):
         self.config = config
+        self.valid_relations = ['contains', 'contains_properly', 'covered_by', 'covers',
+                                'crosses', 'disjoint', 'intersects', 'overlaps', 'touches', 'within']
         self.check_config()
 
     def check_config(self):
@@ -52,8 +54,14 @@ class Config:
             if 'property' not in self.config['target']:
                 raise ConfigNotValidError("Config is missing target property")
 
-        if 'measures' not in self.config:
-            raise ConfigNotValidError("No measures specified")
+        if 'measure' not in self.config:
+            raise ConfigNotValidError("Measure not specified")
+        else:
+            if 'relation' not in self.config['measure']:
+                raise ConfigNotValidError("Relation not specified")
+            else:
+                if self.config['measure']['relation'] not in self.valid_relations:
+                    raise ConfigNotValidError("Relation not valid. Only the following relations are valid: {}".format(self.valid_relations))
 
     def get_chunksize(self, type):
         if type != 'source' and type != 'target':
@@ -91,8 +99,8 @@ class Config:
         else:
             return -1
 
-    def get_measures(self):
-        return self.config['measures']
+    def get_relation(self):
+        return self.config['measure']['relation']
 
     def get_offset(self, type):
         if type != 'source' and type != 'target':
@@ -102,6 +110,12 @@ class Config:
             return self.config[type]['offset']
         else:
             return 0
+
+    def get_output_format(self):
+        if 'output' in self.config:
+            return self.config['output']
+        else:
+            return None
 
     def get_prefixes(self):
         if 'prefixes' in self.config:
@@ -130,12 +144,6 @@ class Config:
 
         if 'restriction' in self.config[type]:
             return self.config[type]['restriction']
-        else:
-            return None
-
-    def get_result_format(self):
-        if 'result_format' in self.config:
-            return self.config['result_format']
         else:
             return None
 
