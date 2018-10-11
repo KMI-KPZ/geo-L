@@ -23,8 +23,8 @@
         "limit": 165000,
         "chunksize": 165000
     },
-    "measures": [
-        "within"
-    ],
-    "result_format": "csv"
+    "measure": {
+        "relation": "within"
+    },
+    "output": "csv"
 }
