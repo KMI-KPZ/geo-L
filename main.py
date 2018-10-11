@@ -60,6 +60,7 @@ def run(config_string, to_file=True):
             results = mapper.map(to_file)
     except ConfigNotValidError as e:
         results = "Config not valid"
+        print(e)
     except HTTPError as e:
         print(e)
     except JSONDecodeError as e:
