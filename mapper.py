@@ -16,7 +16,7 @@ class Mapper:
         self.target_sparql = target_sparql
         self.source = source
         self.target = target
-        self.measures = config.get_measures()
+        self.relation = config.get_relation()
 
         self.info_logger = logger
         self.result_logger = ResultLogger('ResultLogger', source_sparql.get_query_hash(), target_sparql.get_query_hash())
@@ -24,7 +24,12 @@ class Mapper:
     def map(self, to_file=True):
         self.info_logger.logger.log(INFO, "Mapping started...")
         start = time.time()
-        results = sjoin(self.source, self.target, how='inner', op='within')
+
+        if self.relation != 'distance':
+            results = sjoin(self.source, self.target, how='inner', op=self.relation)
+        else:
+            pass  # TODO
+
         end = time.time()
 
         self.info_logger.logger.log(INFO, "Mapping took: {}s".format(round(end - start, 4)))
@@ -39,10 +44,10 @@ class Mapper:
 
     def convert(self, results):
         formatted_results = None
-        result_format = self.config.get_result_format()
+        output_format = self.config.get_output_format()
         results.insert(1, 'within', 'http://www.opengis.net/ont/geosparql#sfWithin')
 
-        if result_format == 'turtle':
+        if output_format == 'turtle':
             results.insert(2, 'end', '.')
             results[self.config.get_var_uri('source')] = '<' + results[self.config.get_var_uri('source')].astype(str) + '>'
             results['within'] = '<' + results['within'].astype(str) + '>'
