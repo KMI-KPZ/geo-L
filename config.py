@@ -5,8 +5,8 @@
 class Config:
     def __init__(self, config):
         self.config = config
-        self.valid_relations = ['contains', 'contains_properly', 'covered_by', 'covers',
-                                'crosses', 'disjoint', 'intersects', 'overlaps', 'touches', 'within']
+        self.valid_relations = ['contains', 'contains_properly', 'covered_by', 'covers', 'crosses',
+                                'disjoint', 'distance', 'hausdorff_distance', 'intersects', 'overlaps', 'touches', 'within']
         self.check_config()
 
     def check_config(self):
@@ -62,6 +62,9 @@ class Config:
             else:
                 if self.config['measure']['relation'] not in self.valid_relations:
                     raise ConfigNotValidError("Relation not valid. Only the following relations are valid: {}".format(self.valid_relations))
+                elif self.config['measure']['relation'] == 'distance':
+                    if 'threshold' not in self.config['measure']:
+                        raise ConfigNotValidError("Config is missing measure threshold")
 
     def get_chunksize(self, type):
         if type != 'source' and type != 'target':
@@ -146,6 +149,9 @@ class Config:
             return self.config[type]['restriction']
         else:
             return None
+
+    def get_threshold(self):
+        return self.config['measure']['threshold']
 
     def get_var_uri(self, type):
         if type != 'source' and type != 'target':
