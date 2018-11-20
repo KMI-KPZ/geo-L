@@ -1,20 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from csv import field_size_limit
-from geopandas import GeoDataFrame
 from gzip import GzipFile
-from io import StringIO, BytesIO
+from io import BytesIO, StringIO
 from logging import INFO
-from numpy import arange
-from os.path import join, isfile
-from pandas import concat, read_csv, Series
-from shapely.wkt import loads
-from sys import maxsize
+from more_itertools import consecutive_groups
+from pandas import DataFrame, read_csv
 
-from logger import InfoLogger
-
+import psycopg2
 import time
+
+DATABASE = "host='localhost' dbname='geoLIMES' user='postgres' password=''"  # TODO: use config file
+
+# TODO: Escape data taken from config file
 
 
 class Cache:
@@ -25,73 +23,126 @@ class Cache:
 
         self.info_logger = logger
 
-        self.set_max_field_size_limit()  # Needed for very long fields
-
     def create_cache(self):
+        start = time.time()
         offset = self.config.get_offset(self.type)
         limit = self.config.get_limit(self.type)
         chunksize = self.config.get_chunksize(self.type)
-        results = None
 
-        if limit > 0 and chunksize > limit:
-            chunksize = limit
+        connection = psycopg2.connect(DATABASE)
+        cursor = connection.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS {}({} VARCHAR, {} VARCHAR, server_offset BIGINT, geo GEOMETRY)".format(
+            'public.table_' + self.sparql.query_hash, self.config.get_var_uri(self.type), self.config.get_var_shape(self.type)))
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_geo_{} ON {} USING GIST(geo);".format(
+            self.sparql.query_hash, 'table_' + self.sparql.query_hash))
+        connection.commit()
+        cursor.close()
 
-        if isfile(join('cache', '{}.csv'.format(self.sparql.query_hash))):
-            self.info_logger.logger.log(INFO, "Cache file {}.csv for query already exists".format(self.sparql.query_hash))
-            self.info_logger.logger.log(INFO, "Loading cache file...")
+        self.info_logger.logger.log(INFO, "Checking {} cache".format(self.type))
 
-            results = read_csv('cache/{}.csv'.format(self.sparql.query_hash))
-
-            new_data = False
-            max_offset = results.loc[results['offset'].idxmax()]['offset']
-            more_results = self.check_more_results(max_offset + 1)
-
-            if limit > 0 and (more_results or offset + limit < max_offset):
-                offsets = Series(arange(offset, offset + limit))
-            else:
-                offsets = Series(arange(offset, max_offset))
-
-            missing_offsets = offsets[~offsets.isin(results['offset'])]
-            missing_offsets_diff = ~missing_offsets.diff().fillna(0).le(1)
-            missing_offsets_intervals = missing_offsets.groupby(missing_offsets_diff.cumsum()).apply(lambda x: x.tolist()).tolist()
-
-            if len(missing_offsets_intervals) > 0:
-                self.info_logger.logger.log(INFO, "Cache file missing data, downloading missing data...")
-                new_data = True
-
-                for interval in missing_offsets_intervals:
-                    interval_offset = interval[0]
-                    limit = interval[len(interval) - 1] - interval_offset + 1
-                    results = self.download_results(results, interval_offset, limit, chunksize)
-                    results.sort_values(by='offset')
-                    results.reset_index(drop=True)
-
-            if limit < 0 and more_results:
-                new_data = True
-                data_frame = self.download_results(results, max_offset + 1, limit, chunksize)
-                results = concat([results, data_frame])
-
-            if new_data:
-                self.write_cache_file(results)
-
-        else:
-            start = time.time()
-            results = self.download_results(results, offset, limit, chunksize)
-            end = time.time()
-            self.info_logger.logger.log(INFO, "Retrieving statements took {}s".format(round(end - start, 4)))
-            self.write_cache_file(results)
+        new_data = False
+        min_offset = offset
+        min_server_offset, max_server_offset = self.find_min_max_server_offset(connection)
 
         if limit > 0:
-            results = results.query(str(offset) + ' <= offset <= ' + str(offset + limit - 1))
+            max_offset = offset + limit - 1
+
+            if (min_server_offset > 0 and max_offset < min_server_offset) or (max_server_offset == 0):
+                self.info_logger.logger.log(INFO, "Cache is missing data, downloading missing data...")
+                self.download_results(connection, offset, limit, chunksize)
+                new_data = True
+            elif min_offset > max_server_offset:
+                more_results = self.check_more_results(min_offset + 1)
+
+                if more_results:
+                    self.info_logger.logger.log(INFO, "Cache is missing data, downloading missing data...")
+                    self.download_results(connection, offset, limit, chunksize)
+                    new_data = True
+            else:
+                intervals = []
+
+                if offset < min_server_offset:
+                    intervals.append((offset, min_server_offset - 1))
+                    min_offset = min_server_offset
+
+                if max_offset > max_server_offset:
+                    intervals.append((max_server_offset + 1, max_offset))
+                    max_offset = max_server_offset
+
+                missing_limit = max_offset - min_offset + 1
+
+                missing_intervals = self.find_missing_data(connection, min_offset, missing_limit)
+                missing_intervals = sorted(missing_intervals + intervals)
+
+                if len(missing_intervals) > 0:
+                    self.info_logger.logger.log(INFO, "Cache is missing data, downloading missing data...")
+
+                    for interval in missing_intervals:
+                        interval_offset = interval[0]
+                        interval_limit = 1
+
+                        if len(interval) > 1:
+                            interval_limit = interval[1] - interval_offset + 1
+
+                        self.download_results(connection, interval_offset, interval_limit, chunksize)
+
+                    new_data = True
+
+                self.info_logger.logger.log(INFO, "Data already cached..")
         else:
-            results = results.query(str(offset) + ' <= offset')
+            if max_server_offset == 0 or min_offset > max_server_offset:
+                self.info_logger.logger.log(INFO, "Cache is missing data, downloading missing data...")
+                self.download_results(connection, offset, limit, chunksize)
+                new_data = True
+            elif min_offset < min_server_offset:
+                missing_interval = [(min_offset, min_server_offset - 1)]
+                missing_intervals = self.find_missing_data(connection, min_offset, missing_limit)
+                missing_intervals = missing_interval + missing_intervals
+                more_results = self.check_more_results(min_offset + 1)
 
-        results = GeoDataFrame(results)
-        results[self.config.get_var_shape(self.type)] = GeoDataFrame(results[self.config.get_var_shape(self.type)].apply(lambda x: loads(x)))
-        results = results.set_geometry(self.config.get_var_shape(self.type))
-        return results
+                if more_results:
+                    missing_intervals + [(max_server_offset + 1,)]
 
-    def download_results(self, results, offset, limit, chunksize):
+                self.info_logger.logger.log(INFO, "Cache is missing data, downloading missing data...")
+
+                for interval in missing_intervals:
+                    interval_offset = interval[0]
+                    interval_limit = -1
+
+                    if len(interval) > 1:
+                        interval_limit = interval[1] - interval_offset + 1
+
+                    self.download_results(connection, interval_offset, interval_limit, chunksize)
+
+                new_data = True
+            else:
+                missing_intervals = self.find_missing_data(connection, min_offset, max_server_offset)
+                more_results = self.check_more_results(min_offset + 1)
+
+                if more_results:
+                    missing_intervals += [(max_server_offset + 1,)]
+
+                if len(missing_intervals) > 0:
+                    self.info_logger.logger.log(INFO, "Cache is missing data, downloading missing data...")
+
+                    for interval in missing_intervals:
+                        interval_offset = interval[0]
+                        interval_limit = -1
+
+                        if len(interval) > 1:
+                            interval_limit = interval[1] - interval_offset + 1
+
+                        self.download_results(connection, interval_offset, interval_limit, chunksize)
+
+                new_data = True
+
+        connection.close()
+        end = time.time()
+
+        if new_data:
+            self.info_logger.logger.log(INFO, "Retrieving statements took {}s".format(round(end - start, 4)))
+
+    def download_results(self, connection, offset, limit, chunksize):
         start_offset = offset
         run = True
 
@@ -121,21 +172,91 @@ class Cache:
                 csv_result = StringIO(result.convert().decode('utf-8'))
 
             result.response.close()
-            data_frame = read_csv(csv_result)
-            data_frame['offset'] = range(offset, offset + len(data_frame))
-            size = len(data_frame)
-
-            if results is None:
-                results = data_frame
-            else:
-                results = concat([results, data_frame])
+            size = self.insert(connection, csv_result, offset, chunksize)
 
             if size < chunksize:
                 break
 
             offset = offset + chunksize
 
-        return results
+    def insert(self, connection, result, offset, chunksize):
+        data_frame = read_csv(result)
+        data_frame['server_offset'] = range(offset, offset + len(data_frame))
+        data_frame_column_headers = list(data_frame)
+        column_headers = [self.config.get_var_uri(self.type), self.config.get_var_shape(self.type), 'server_offset']
+
+        for data_frame_column_header in data_frame_column_headers:
+            if data_frame_column_header not in column_headers:
+                data_frame.drop(data_frame_column_header, 1, inplace=True)
+
+        size = len(data_frame)
+
+        output = StringIO()
+        data_frame.to_csv(output, sep=';', index=False)
+        output.seek(0)
+
+        cursor = connection.cursor()
+        cursor.copy_expert(sql="COPY {} ({}, {}, {}) FROM STDIN WITH CSV HEADER DELIMITER AS ';'".format(
+            'table_' + self.sparql.query_hash, self.config.get_var_uri(self.type), self.config.get_var_shape(self.type), 'server_offset'),
+            file=output)
+        cursor.execute("UPDATE {} SET geo = ST_GeomFromText({}) WHERE geo IS NULL AND ST_ISVALID(ST_GeomFromText({}))".format(
+            'table_' + self.sparql.query_hash, self.config.get_var_shape(self.type), self.config.get_var_shape(self.type)))
+        connection.commit()
+        cursor.close()
+
+        return size
+
+    def gunzip_response(self, response):
+        buffer = BytesIO()
+        buffer.write(response.response.read())
+        buffer.seek(0)
+
+        with GzipFile(fileobj=buffer, mode='rb') as unzipped:
+            result = unzipped.read()
+            return StringIO(result.decode('utf-8'))
+
+    def find_min_max_server_offset(self, connection):
+        cursor = connection.cursor()
+        cursor.execute("SELECT MIN(server_offset), MAX(server_offset) FROM {}".format('table_' + self.sparql.query_hash))
+        result = cursor.fetchone()
+        cursor.close()
+
+        min_offset = 0
+        max_offset = 0
+
+        if result[0] != None:
+            min_offset = result[0]
+
+        if result[1] != None:
+            max_offset = result[1]
+
+        return min_offset, max_offset
+
+    def find_missing_data(self, connection, offset, limit):
+        cursor = connection.cursor()
+        cursor.execute("""
+        SELECT s.i AS missing 
+        FROM generate_series({}, {}) s(i) 
+        WHERE NOT EXISTS (
+            SELECT 1 FROM {} WHERE server_offset = s.i 
+        ) 
+        ORDER BY missing
+        """.format(offset, offset + limit - 1, 'table_' + self.sparql.query_hash))
+        result = cursor.fetchall()
+        cursor.close()
+
+        missing_values = [x[0] for x in result]
+        missing_intervals = list(self.find_ranges(missing_values))
+
+        return missing_intervals
+
+    def find_ranges(self, iterable):
+        for group in consecutive_groups(iterable):
+            group = list(group)
+            if len(group) == 1:
+                yield group[0]
+            else:
+                yield group[0], group[-1]
 
     def check_more_results(self, offset):
         result = self.sparql.query(offset, 1)
@@ -148,27 +269,3 @@ class Cache:
 
         data_frame = read_csv(csv_result)
         return len(data_frame) == 1
-
-    def write_cache_file(self, results):
-        self.info_logger.logger.log(INFO, "Writing cache file: {}.csv".format(self.sparql.query_hash))
-        results.to_csv(join('cache', '{}.csv'.format(self.sparql.query_hash)), index=False)
-
-    def set_max_field_size_limit(self):
-        dec = True
-        maxInt = maxsize
-
-        while dec:
-            try:
-                field_size_limit(maxInt)
-                dec = False
-            except OverflowError:
-                maxInt = int(maxInt / 10)
-
-    def gunzip_response(self, response):
-        buffer = BytesIO()
-        buffer.write(response.response.read())
-        buffer.seek(0)
-
-        with GzipFile(fileobj=buffer, mode='rb') as unzipped:
-            result = unzipped.read()
-            return StringIO(result.decode('utf-8'))
