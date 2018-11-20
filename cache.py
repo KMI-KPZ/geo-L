@@ -136,11 +136,15 @@ class Cache:
 
                 new_data = True
 
-        connection.close()
-        end = time.time()
-
         if new_data:
+            # TODO write log file with invalid geometries
+            end = time.time()
             self.info_logger.logger.log(INFO, "Retrieving statements took {}s".format(round(end - start, 4)))
+
+        invalid_geometries_count = self.count_invalid_geometries(connection)
+        self.info_logger.logger.log(INFO, "{} invalid geometries in {}".format(invalid_geometries_count, self.type))
+
+        connection.close()
 
     def download_results(self, connection, offset, limit, chunksize):
         start_offset = offset
@@ -269,3 +273,11 @@ class Cache:
 
         data_frame = read_csv(csv_result)
         return len(data_frame) == 1
+
+    def count_invalid_geometries(self, connection):
+        cursor = connection.cursor()
+        cursor.execute("SELECT COUNT(*) AS count FROM {} WHERE geo IS NULL".format('table_' + self.sparql.query_hash))
+        result = cursor.fetchone()
+        cursor.close()
+
+        return result[0]
