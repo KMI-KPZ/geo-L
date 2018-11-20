@@ -55,9 +55,8 @@ def run(config_string, to_file=True):
         target_cache = Cache(info_logger, config, target_sparql, 'target')
         target = target_cache.create_cache()
 
-        if source is not None and target is not None:
-            mapper = Mapper(info_logger, config, source_sparql, target_sparql, source, target)
-            results = mapper.map(to_file)
+        mapper = Mapper(info_logger, config, source_sparql, target_sparql, source, target)
+        results = mapper.map(to_file)
     except ConfigNotValidError as e:
         results = "Config not valid"
         print(e)
