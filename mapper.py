@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from geopandas import sjoin
-from pandas import concat, DataFrame
+from logger import InfoLogger, ResultLogger
 from logging import INFO
 
-from logger import InfoLogger, ResultLogger
-
+import psycopg2
 import time
+
+DATABASE = "host='localhost' dbname='geoLIMES' user='postgres' password=''"  # TODO: use config file
 
 
 class Mapper:
@@ -25,61 +25,49 @@ class Mapper:
     def map(self, to_file=True):
         self.info_logger.logger.log(INFO, "Mapping started...")
         start = time.time()
+        relation = self.config.get_relation()
+        source_query_hash = self.source_sparql.get_query_hash()
+        target_query_hash = self.target_sparql.get_query_hash()
+        source_offset = self.config.get_offset('source')
+        target_offset = self.config.get_offset('target')
 
-        if self.relation != 'distance' and self.relation != 'hausdorff_distance':
-            results = sjoin(self.source, self.target, how='inner', op=self.relation)
-
-            if self.relation == 'contains':
-                results.insert(1, 'relation', 'http://www.opengis.net/ont/geosparql#sfContains')
-            elif self.relation == 'covered_by':
-                results.insert(1, 'relation', 'http://www.opengis.net/ont/geosparql#')
-            elif self.relation == 'covers':
-                results.insert(1, 'relation', 'http://www.opengis.net/ont/geosparql#ehCovers')
-            elif self.relation == 'crosses':
-                results.insert(1, 'relation', 'http://www.opengis.net/ont/geosparql#sfCrosses')
-            elif self.relation == 'disjoint':
-                results.insert(1, 'relation', 'http://www.opengis.net/ont/geosparql#sfDisjoint')
-            elif self.relation == 'intersects':
-                results.insert(1, 'relation', 'http://www.opengis.net/ont/geosparql#sfIntersects')
-            elif self.relation == 'overlaps':
-                results.insert(1, 'relation', 'http://www.opengis.net/ont/geosparql#sfOverlaps')
-            elif self.relation == 'touches':
-                results.insert(1, 'relation', 'http://www.opengis.net/ont/geosparql#sfTouches')
-            elif self.relation == 'within':
-                results.insert(1, 'relation', 'http://www.opengis.net/ont/geosparql#sfWithin')
+        if self.config.get_limit('source') > 0:
+            source_max_offset = source_offset + self.config.get_limit('source') - 1
+            source_query = 'SELECT * FROM {} WHERE server_offset BETWEEN {} AND {} AND geo IS NOT NULL'.format(
+                'table_' + source_query_hash, source_offset, source_max_offset)
         else:
-            results = DataFrame(columns=[self.config.get_var_uri('source'), self.config.get_var_uri('target'), 'distance'])
+            source_query = 'SELECT * FROM {} WHERE geo IS NOT NULL OFFSET {}'.format('table_' + source_query_hash, source_offset)
 
-            for index, row in self.source.iterrows():
-                row_results = DataFrame()
-                source_shape = row[self.config.get_var_shape('source')]
+        if self.config.get_limit('target') > 0:
+            target_max_offset = target_offset + self.config.get_limit('target') - 1
+            target_query = 'SELECT * FROM {} WHERE server_offset BETWEEN {} AND {} AND geo IS NOT NULL'.format(
+                'table_' + target_query_hash, target_offset, target_max_offset)
+        else:
+            target_query = 'SELECT * FROM {} WHERE geo IS NOT NULL OFFSET {}'.format('table_' + target_query_hash, target_offset)
 
-                if self.relation == 'distance':
-                    self.target['distance'] = self.target.apply(lambda item: source_shape.distance(item[self.config.get_var_shape('target')]), axis=1)
-                elif self.relation == 'hausdorff_distance':
-                    self.target['distance'] = self.target.apply(lambda item: source_shape.hausdorff_distance(
-                        item[self.config.get_var_shape('target')]), axis=1)
+        if self.relation == 'within':
+            relation = 'ST_WITHIN'
 
-                current_results = self.target[self.target['distance'] < self.config.get_threshold()]
-                row_results[self.config.get_var_uri('target')] = current_results[self.config.get_var_uri('target')]
-                row_results['distance'] = current_results['distance']
-                row_results[self.config.get_var_uri('source')] = row[self.config.get_var_uri('source')]
+        connection = psycopg2.connect(DATABASE)
+        cursor = connection.cursor()
+        cursor.execute("""
+        SELECT source_data.{}, target_data.{}
+        FROM ({}) AS source_data
+	    INNER JOIN
+	    ({}) AS target_data
+        ON {}(source_data.geo, target_data.geo)
+        """.format(self.config.get_var_shape('source'), self.config.get_var_shape('target'), source_query, target_query, relation))
 
-                if len(row_results) > 0:
-                    results = concat([results, row_results], sort=False)
-
-            results.insert(1, 'relation', 'http://jena.apache.org/spatial#nearby')
-
-        formatted_results = self.convert(results)
+        results = cursor.fetchall()
         end = time.time()
 
         self.info_logger.logger.log(INFO, "Mapping took: {}s".format(round(end - start, 4)))
         self.info_logger.logger.log(INFO, "{} mappings found".format(len(results)))
 
-        if to_file:
-            self.result_logger.logger.info(formatted_results)
+        # if to_file:
+        #    self.result_logger.logger.info(formatted_results)
 
-        return formatted_results
+        # return formatted_results
 
     def convert(self, results):
         formatted_results = None
