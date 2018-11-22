@@ -134,7 +134,7 @@ class Cache:
 
                         self.download_results(connection, interval_offset, interval_limit, chunksize)
 
-                new_data = True
+                    new_data = True
 
         if new_data:
             # TODO write log file with invalid geometries
