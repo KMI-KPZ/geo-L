@@ -26,9 +26,6 @@ def get_arguments():
 
 
 def create_dirs():
-    if not exists('cache') or not isdir('cache'):
-        makedirs('cache')
-
     if not exists('logs') or not isdir('logs'):
         makedirs('logs')
 
@@ -50,10 +47,10 @@ def run(config_string, to_file=True):
         info_logger = InfoLogger('InfoLogger', '{}_{}'.format(source_sparql.get_query_hash(), target_sparql.get_query_hash()))
 
         source_cache = Cache(info_logger,  config, source_sparql, 'source')
-        source = source_cache.create_cache()
+        source_cache.create_cache()
 
         target_cache = Cache(info_logger, config, target_sparql, 'target')
-        target = target_cache.create_cache()
+        target_cache.create_cache()
 
         mapper = Mapper(info_logger, config, source_sparql, target_sparql, source, target)
         results = mapper.map(to_file)
