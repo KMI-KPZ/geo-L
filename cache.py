@@ -10,8 +10,6 @@ from pandas import DataFrame, read_csv
 import psycopg2
 import time
 
-DATABASE = "host='localhost' dbname='geoLIMES' user='postgres' password=''"  # TODO: use config file
-
 # TODO: Escape data taken from config file
 
 
@@ -29,7 +27,7 @@ class Cache:
         limit = self.config.get_limit(self.type)
         chunksize = self.config.get_chunksize(self.type)
 
-        connection = psycopg2.connect(DATABASE)
+        connection = psycopg2.connect(self.config.get_database_string())
         cursor = connection.cursor()
         cursor.execute("CREATE TABLE IF NOT EXISTS {}({} VARCHAR, {} VARCHAR, server_offset BIGINT, geo GEOMETRY)".format(
             'public.table_' + self.sparql.query_hash, self.config.get_var_uri(self.type), self.config.get_var_shape(self.type)))

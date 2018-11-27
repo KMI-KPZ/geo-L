@@ -9,8 +9,6 @@ import csv
 import psycopg2
 import time
 
-DATABASE = "host='localhost' dbname='geoLIMES' user='postgres' password=''"  # TODO: use config file
-
 
 class Mapper:
     def __init__(self, logger, config, source_sparql, target_sparql):
@@ -68,7 +66,7 @@ class Mapper:
 
         # TODO: add distance measures (ST_DISTANCE, ST_HAUSDORFFDISTANCE, ST_DWITHIN)
 
-        connection = psycopg2.connect(DATABASE)
+        connection = psycopg2.connect(self.config.get_database_string())
         cursor = connection.cursor()
         cursor.execute("""
         SELECT source_data.{} AS source_uri, target_data.{} AS target_uri

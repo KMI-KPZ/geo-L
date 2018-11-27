@@ -20,9 +20,10 @@ path.append("${HOME}/.local/lib/python3.7/site-packages/")
 def get_arguments():
     parser = ArgumentParser(description="Python LIMES")
     parser.add_argument("-c", "--config", type=str, dest="config_file", help="Path to a config file", required=True)
+    parser.add_argument("-d", "--database", type=str, dest="database_config_file", help="Path to a database config file", required=True)
     parser.add_argument("-v", "--version", action="version", version="0.0.1", help="Show program version and exit")
     arguments = parser.parse_args()
-    return arguments.config_file
+    return arguments.config_file, arguments.database_config_file
 
 
 def create_dirs():
@@ -33,13 +34,14 @@ def create_dirs():
         makedirs('output')
 
 
-def run(config_string, to_file=True):
+def run(config_string, database_config_string, to_file=True):
     create_dirs()
     results = None
 
     try:
         config_json = loads(config_string)
-        config = Config(config_json)
+        database_config = loads(database_config_string)
+        config = Config(config_json, database_config)
 
         source_sparql = SPARQL(config, 'source')
         target_sparql = SPARQL(config, 'target')
@@ -67,9 +69,10 @@ def run(config_string, to_file=True):
 
 def main():
     try:
-        connfig_file_path = get_arguments()
+        connfig_file_path, database_config_file_path = get_arguments()
         config = load_config(connfig_file_path)
-        run(config)
+        database_config = load_config(database_config_file_path)
+        run(config, database_config)
     except FileNotFoundError as e:
         print(e)
 

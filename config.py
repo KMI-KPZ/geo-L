@@ -3,8 +3,9 @@
 
 
 class Config:
-    def __init__(self, config):
+    def __init__(self, config, database_config):
         self.config = config
+        self.database_config = database_config
         self.valid_relations = ['contains', 'contains_properly', 'covered_by', 'covers', 'crosses',
                                 'disjoint', 'distance', 'hausdorff_distance', 'intersects', 'overlaps', 'touches', 'within']
         self.check_config()
@@ -66,6 +67,16 @@ class Config:
                     if 'threshold' not in self.config['measure']:
                         raise ConfigNotValidError("Config is missing measure threshold")
 
+        # Check database confifg
+        if 'database_name' not in self.database_config:
+            raise ConfigNotValidError("Database name not specified")
+
+        if 'database_user' not in self.database_config:
+            raise ConfigNotValidError("Database user not specified")
+
+        if 'database_password' not in self.database_config:
+            raise ConfigNotValidError("Database password not specified")
+
     def get_chunksize(self, type):
         if type != 'source' and type != 'target':
             raise Exception("Wrong type (not source or target) specified")
@@ -74,6 +85,32 @@ class Config:
             return self.config[type]['chunksize']
         else:
             return -1
+
+    def get_database_name(self):
+        return self.database_config['database_name']
+
+    def get_database_user(self):
+        return self.database_config['database_user']
+
+    def get_database_password(self):
+        return self.database_config['database_password']
+
+    def get_database_host(self):
+        if 'database_host' in self.database_config:
+            return self.database_config['database_host']
+        else:
+            return 'localhost'
+
+    def get_database_port(self):
+        if 'database_port' in self.database_config:
+            return str(self.database_config['database_port'])
+        else:
+            return '5432'
+
+    def get_database_string(self):
+        return "host='{}' dbname='{}' user='{}' password='{}' port={}".format(self.get_database_host(), self.get_database_name(),
+                                                                              self.get_database_user(), self.get_database_password(),
+                                                                              self.get_database_port())
 
     def get_endpoint(self, type):
         if type != 'source' and type != 'target':
