@@ -1,23 +1,23 @@
-# geoLIMES
+# GeoLIMES
+
+A tool for discovery of geo-spatial links.
+
+GeoLIMES retrieves specified properties of spatial objects from source and target datasets, through their respective SPARQL endpoints, and finds topological relations between objects in source and target objects according to topological predicates.
+
+The specifications of the relevant properties are provided in a configuration file, which allows constraining the number of object by specifying offset and limit . A dataset can be created through properties which already exist in the graph, and, in addition, GeoLimes allows direct construction of ad-hoc values through a SPARQL select statement for a given resource.
+
+[Source code](https://git.informatik.uni-leipzig.de/mam10kzu/Python-LIMES)
 
 ## Installation
 
-1. Install Python3
-2. Install libspatialindex, libgeos
-3. Install the following packages: pandas, geopandas, shapely and SPARQLWrapper
-
-To get faster* runtime use geopandas-cython. To intall it use the commands below.
-```bash
-git clone https://github.com/geopandas/geopandas
-git checkout geopandas-cython
-make install
-```
-\* Sometimes the runtime is much slower, see this [issue](https://github.com/geopandas/geopandas/issues/563).
+1. Install Python3.
+2. Install the following Python libraries: more_itertools, pandas, psycopg2
+3. Install PostgreSQL and PostGIS
+4. Create a database and add extensions postgis and postgis_topology
 
 ## Run
 
-To run the program, a config file is needed. Example configs are in the config folder.
-
-```bash
-python main.py -c config.json
+To run the program, a config file and a database config file are needed. Example configs are in the configs folder.
+```
+python main.py -c config.json -d postgresql_config.json
 ```
