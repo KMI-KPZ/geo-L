@@ -1,0 +1,7 @@
+{
+    "database_name": "geoLIMES",
+    "database_user": "postgres",
+    "database_password": "",
+    "database_host": "localhost",
+    "database_port": 5432
+}
