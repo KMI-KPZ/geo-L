@@ -11,12 +11,10 @@ DATABASE = "host='localhost' dbname='geoLIMES' user='postgres' password=''"  # T
 
 
 class Mapper:
-    def __init__(self, logger, config, source_sparql, target_sparql, source, target):
+    def __init__(self, logger, config, source_sparql, target_sparql):
         self.config = config
         self.source_sparql = source_sparql
         self.target_sparql = target_sparql
-        self.source = source
-        self.target = target
         self.relation = config.get_relation()
 
         self.info_logger = logger
@@ -45,6 +43,7 @@ class Mapper:
         else:
             target_query = 'SELECT * FROM {} WHERE geo IS NOT NULL OFFSET {}'.format('table_' + target_query_hash, target_offset)
 
+        # TODO add other relations
         if self.relation == 'within':
             relation = 'ST_WITHIN'
 
@@ -64,6 +63,7 @@ class Mapper:
         self.info_logger.logger.log(INFO, "Mapping took: {}s".format(round(end - start, 4)))
         self.info_logger.logger.log(INFO, "{} mappings found".format(len(results)))
 
+        # TODO convert and return results
         # if to_file:
         #    self.result_logger.logger.info(formatted_results)
 
