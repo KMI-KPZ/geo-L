@@ -3,7 +3,9 @@
 
 from logger import InfoLogger, ResultLogger
 from logging import INFO
+from pandas import DataFrame
 
+import csv
 import psycopg2
 import time
 
@@ -43,31 +45,53 @@ class Mapper:
         else:
             target_query = 'SELECT * FROM {} WHERE geo IS NOT NULL OFFSET {}'.format('table_' + target_query_hash, target_offset)
 
-        # TODO add other relations
-        if self.relation == 'within':
+        if self.relation == 'contains':
+            relation = 'ST_CONTAINS'
+        elif self.relation == 'contains_properly':
+            relation = 'ST_CONTAINSPROPERLY'
+        elif self.relation == 'covers':
+            relation = 'ST_COVERS'
+        elif self.relation == 'covered_by':
+            relation = 'ST_COVEREDBY'
+        elif self.relation == 'covers':
+            relation = 'ST_CROSSES'
+        elif self.relation == 'disjoint':
+            relation = 'ST_DISJOINT'
+        elif self.relation == 'intersects':
+            relation = 'ST_INTERSECTS'
+        elif self.relation == 'overlaps':
+            relation = 'ST_OVERLAPS'
+        elif self.relation == 'touches':
+            relation = 'ST_TOUCHES'
+        elif self.relation == 'within':
             relation = 'ST_WITHIN'
+
+        # TODO: add distance measures (ST_DISTANCE, ST_HAUSDORFFDISTANCE, ST_DWITHIN)
 
         connection = psycopg2.connect(DATABASE)
         cursor = connection.cursor()
         cursor.execute("""
-        SELECT source_data.{}, target_data.{}
+        SELECT source_data.{} AS source_uri, target_data.{} AS target_uri
         FROM ({}) AS source_data
 	    INNER JOIN
 	    ({}) AS target_data
         ON {}(source_data.geo, target_data.geo)
-        """.format(self.config.get_var_shape('source'), self.config.get_var_shape('target'), source_query, target_query, relation))
+        """.format(self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query, relation))
 
-        results = cursor.fetchall()
+        data_frame = DataFrame(cursor.fetchall())
+        data_frame.columns = ['source_uri', 'target_uri']
+        data_frame.insert(1, 'relation', self.relation)
         end = time.time()
 
         self.info_logger.logger.log(INFO, "Mapping took: {}s".format(round(end - start, 4)))
-        self.info_logger.logger.log(INFO, "{} mappings found".format(len(results)))
+        self.info_logger.logger.log(INFO, "{} mappings found".format(len(data_frame)))
 
-        # TODO convert and return results
-        # if to_file:
-        #    self.result_logger.logger.info(formatted_results)
+        formatted_results = self.convert(data_frame)
 
-        # return formatted_results
+        if to_file:
+            self.result_logger.logger.info(formatted_results)
+
+        return formatted_results
 
     def convert(self, results):
         formatted_results = None
@@ -82,14 +106,12 @@ class Mapper:
                 'target'), 'end'], header=False, index=False, index_label=False, sep=' ')
         elif output_format == 'json':
             formatted_results = results.to_json(na='drop')
-
         else:
-            results.rename(columns={self.config.get_var_uri('source'): 'source_uri', self.config.get_var_uri('target'): 'target_uri'}, inplace=True)
-
             if 'distance' in results:
-                formatted_results = results.to_csv(columns=['source_uri', 'relation', 'target_uri',
-                                                            'distance'], header=True, index=False, index_label=False)
+                formatted_results = results.to_csv(columns=['source_uri', 'relation', 'target_uri', 'distance'],
+                                                   header=True, index=False, index_label=False)
             else:
-                formatted_results = results.to_csv(columns=['source_uri', 'relation', 'target_uri'], header=True, index=False, index_label=False)
+                formatted_results = results.to_csv(columns=['source_uri', 'relation', 'target_uri'],
+                                                   header=True, index=False, index_label=False)
 
         return formatted_results
