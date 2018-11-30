@@ -10,8 +10,6 @@ from pandas import DataFrame, read_csv
 import psycopg2
 import time
 
-# TODO: Escape data taken from config file
-
 
 class Cache:
     def __init__(self, logger, config, sparql, type):
@@ -29,7 +27,7 @@ class Cache:
 
         connection = psycopg2.connect(self.config.get_database_string())
         cursor = connection.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS {}({} VARCHAR, {} VARCHAR, server_offset BIGINT, geo GEOMETRY)".format(
+        cursor.execute("CREATE TABLE IF NOT EXISTS {}(\"{}\" VARCHAR, \"{}\" VARCHAR, server_offset BIGINT, geo GEOMETRY)".format(
             'public.table_' + self.sparql.query_hash, self.config.get_var_uri(self.type), self.config.get_var_shape(self.type)))
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_geo_{} ON {} USING GIST(geo);".format(
             self.sparql.query_hash, 'table_' + self.sparql.query_hash))
@@ -135,7 +133,6 @@ class Cache:
                     new_data = True
 
         if new_data:
-            # TODO write log file with invalid geometries
             end = time.time()
             self.info_logger.logger.log(INFO, "Retrieving statements took {}s".format(round(end - start, 4)))
 
@@ -198,7 +195,7 @@ class Cache:
         output.seek(0)
 
         cursor = connection.cursor()
-        cursor.copy_expert(sql="COPY {} ({}, {}, {}) FROM STDIN WITH CSV HEADER DELIMITER AS ';'".format(
+        cursor.copy_expert(sql="COPY {} (\"{}\", \"{}\", \"{}\") FROM STDIN WITH CSV HEADER DELIMITER AS ';'".format(
             'table_' + self.sparql.query_hash, self.config.get_var_uri(self.type), self.config.get_var_shape(self.type), 'server_offset'),
             file=output)
         cursor.execute("UPDATE {} SET geo = ST_GeomFromText({}) WHERE geo IS NULL AND ST_ISVALID(ST_GeomFromText({}))".format(

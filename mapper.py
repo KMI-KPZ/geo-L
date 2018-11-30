@@ -69,7 +69,7 @@ class Mapper:
         connection = psycopg2.connect(self.config.get_database_string())
         cursor = connection.cursor()
         cursor.execute("""
-        SELECT source_data.{} AS source_uri, target_data.{} AS target_uri
+        SELECT source_data.\"{}\" AS source_uri, target_data.\"{}\" AS target_uri
         FROM ({}) AS source_data
 	    INNER JOIN
 	    ({}) AS target_data
