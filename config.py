@@ -13,47 +13,71 @@ class Config:
     def check_config(self):
         if 'source' not in self.config:
             raise ConfigNotValidError("Config is missing source")
+        else:
+            if 'endpoint' not in self.config['source']:
+                raise ConfigNotValidError("Config is missing source endpoint")
+
+            if 'var' not in self.config['source']:
+                raise ConfigNotValidError("Config is missing source var")
+            else:
+                if 'uri' not in self.config['source']['var']:
+                    raise ConfigNotValidError("Variable for uri not specified in source")
+
+                if 'shape' not in self.config['source']['var']:
+                    raise ConfigNotValidError("Variable for shape not specified in source")
+
+            if 'rawquery' not in self.config['source']:
+                if 'graph' not in self.config['source']:
+                    raise ConfigNotValidError("Config is missing source graph")
+
+                if 'property' not in self.config['source']:
+                    raise ConfigNotValidError("Config is missing source property")
+
+            if 'offset' in self.config['source']:
+                if not isinstance(self.config['source']['offset'], int):
+                    raise ConfigNotValidError("Source offset is not an integer")
+
+            if 'limit' in self.config['source']:
+                if not isinstance(self.config['source']['limit'], int):
+                    raise ConfigNotValidError("Source limit is not an integer")
+
+            if 'chunksize' in self.config['source']:
+                if not isinstance(self.config['source']['chunksize'], int):
+                    raise ConfigNotValidError("Source chunksize is not an integer")
 
         if 'target' not in self.config:
             raise ConfigNotValidError("Config is missing target")
-
-        if 'endpoint' not in self.config['source']:
-            raise ConfigNotValidError("Config is missing source endpoint")
-
-        if 'var' not in self.config['source']:
-            raise ConfigNotValidError("Config is missing source var")
         else:
-            if 'uri' not in self.config['source']['var']:
-                raise ConfigNotValidError("Variable for uri not specified in  source")
+            if 'endpoint' not in self.config['target']:
+                raise ConfigNotValidError("Config is missing target endpoint")
 
-            if 'shape' not in self.config['source']['var']:
-                raise ConfigNotValidError("Variable for shape not specified in  source")
+            if 'var' not in self.config['target']:
+                raise ConfigNotValidError("Config is missing target var")
+            else:
+                if 'uri' not in self.config['target']['var']:
+                    raise ConfigNotValidError("Variable for uri not specified in target")
 
-        if 'rawquery' not in self.config['source']:
-            if 'graph' not in self.config['source']:
-                raise ConfigNotValidError("Config is missing source graph")
+                if 'shape' not in self.config['target']['var']:
+                    raise ConfigNotValidError("Variable for shape not specified in target")
 
-            if 'property' not in self.config['source']:
-                raise ConfigNotValidError("Config is missing source property")
+            if 'rawquery' not in self.config['target']:
+                if 'graph' not in self.config['target']:
+                    raise ConfigNotValidError("Config is missing target graph")
 
-        if 'endpoint' not in self.config['target']:
-            raise ConfigNotValidError("Config is missing target endpoint")
+                if 'property' not in self.config['target']:
+                    raise ConfigNotValidError("Config is missing target property")
 
-        if 'var' not in self.config['target']:
-            raise ConfigNotValidError("Config is missing target var")
-        else:
-            if 'uri' not in self.config['target']['var']:
-                raise ConfigNotValidError("Variable for uri not specified in  target")
+            if 'offset' in self.config['target']:
+                if not isinstance(self.config['target']['offset'], int):
+                    raise ConfigNotValidError("Target offset is not an integer")
 
-            if 'shape' not in self.config['target']['var']:
-                raise ConfigNotValidError("Variable for shape not specified in  target")
+            if 'limit' in self.config['target']:
+                if not isinstance(self.config['target']['limit'], int):
+                    raise ConfigNotValidError("Target limit is not an integer")
 
-        if 'rawquery' not in self.config['target']:
-            if 'graph' not in self.config['target']:
-                raise ConfigNotValidError("Config is missing target graph")
-
-            if 'property' not in self.config['target']:
-                raise ConfigNotValidError("Config is missing target property")
+            if 'chunksize' in self.config['target']:
+                if not isinstance(self.config['target']['chunksize'], int):
+                    raise ConfigNotValidError("Target chunksize is not an integer")
 
         if 'measure' not in self.config:
             raise ConfigNotValidError("Measure not specified")
@@ -84,7 +108,7 @@ class Config:
         if 'chunksize' in self.config[type]:
             return self.config[type]['chunksize']
         else:
-            return -1
+            return 1000
 
     def get_database_name(self):
         return self.database_config['database_name']
