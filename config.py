@@ -91,7 +91,7 @@ class Config:
                     if 'threshold' not in self.config['measure']:
                         raise ConfigNotValidError("Config is missing measure threshold")
 
-        # Check database confifg
+        # Check database config
         if 'database_name' not in self.database_config:
             raise ConfigNotValidError("Database name not specified")
 
