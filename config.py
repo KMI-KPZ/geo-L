@@ -7,7 +7,8 @@ class Config:
         self.config = config
         self.database_config = database_config
         self.valid_relations = ['contains', 'contains_properly', 'covered_by', 'covers', 'crosses',
-                                'disjoint', 'distance', 'hausdorff_distance', 'intersects', 'overlaps', 'touches', 'within']
+                                'disjoint', 'distance', 'distance_within', 'hausdorff_distance',
+                                'intersects', 'overlaps', 'touches', 'within']
         self.check_config()
 
     def check_config(self):
@@ -87,7 +88,7 @@ class Config:
             else:
                 if self.config['measure']['relation'] not in self.valid_relations:
                     raise ConfigNotValidError("Relation not valid. Only the following relations are valid: {}".format(self.valid_relations))
-                elif self.config['measure']['relation'] == 'distance':
+                elif self.config['measure']['relation'] == 'distance' or self.config['measure']['relation'] == 'distance_within' or self.config['measure']['relation'] == 'hausdorff_distance':
                     if 'threshold' not in self.config['measure']:
                         raise ConfigNotValidError("Config is missing measure threshold")
 

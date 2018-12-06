@@ -63,8 +63,12 @@ class Mapper:
             relation = 'ST_TOUCHES'
         elif self.relation == 'within':
             relation = 'ST_WITHIN'
-
-        # TODO: add distance measures (ST_DISTANCE, ST_HAUSDORFFDISTANCE, ST_DWITHIN)
+        elif self.relaton = 'distance':
+            self.relation = 'ST_DISTANCE'
+        elif self.relation = 'hausdorff_distance':
+            self.relation = 'ST_HAUSDORFFDISTANCE'
+        elif self.relation = 'distance_within':
+            self.relation = 'ST_DWITHIN'
 
         connection = psycopg2.connect(self.config.get_database_string())
         cursor = connection.cursor()
@@ -77,6 +81,8 @@ class Mapper:
         """.format(self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query, relation))
 
         data_frame = DataFrame(cursor.fetchall())
+        cursor.close()
+        connection.close()
         data_frame.columns = ['source_uri', 'target_uri']
         data_frame.insert(1, 'relation', self.relation)
         end = time.time()
@@ -105,7 +111,7 @@ class Mapper:
         elif output_format == 'json':
             formatted_results = results.to_json(na='drop')
         else:
-            if 'distance' in results:
+            if 'distance' in results or 'hausdorff_distance' in results:
                 formatted_results = results.to_csv(columns=['source_uri', 'relation', 'target_uri', 'distance'],
                                                    header=True, index=False, index_label=False)
             else:
