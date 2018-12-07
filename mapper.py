@@ -63,11 +63,11 @@ class Mapper:
             relation = 'ST_TOUCHES'
         elif self.relation == 'within':
             relation = 'ST_WITHIN'
-        elif self.relaton = 'distance':
+        elif self.relaton == 'distance':
             self.relation = 'ST_DISTANCE'
-        elif self.relation = 'hausdorff_distance':
+        elif self.relation == 'hausdorff_distance':
             self.relation = 'ST_HAUSDORFFDISTANCE'
-        elif self.relation = 'distance_within':
+        elif self.relation == 'distance_within':
             self.relation = 'ST_DWITHIN'
 
         connection = psycopg2.connect(self.config.get_database_string())
