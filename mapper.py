@@ -55,6 +55,8 @@ class Mapper:
             relation_function = 'ST_CROSSES'
         elif self.relation == 'disjoint':
             relation_function = 'ST_DISJOINT'
+        elif self.relation == 'equals':
+            relation_function = 'ST_EQUALS'
         elif self.relation == 'intersects':
             relation_function = 'ST_INTERSECTS'
         elif self.relation == 'overlaps':

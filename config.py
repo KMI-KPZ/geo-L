@@ -6,9 +6,8 @@ class Config:
     def __init__(self, config, database_config):
         self.config = config
         self.database_config = database_config
-        self.valid_relations = ['contains', 'contains_properly', 'covered_by', 'covers', 'crosses',
-                                'disjoint', 'distance', 'distance_within', 'hausdorff_distance',
-                                'intersects', 'overlaps', 'touches', 'within']
+        self.valid_relations = ['contains', 'contains_properly', 'covered_by', 'covers', 'crosses', 'disjoint', 'distance',
+                                'distance_within', 'equals', 'hausdorff_distance', 'intersects', 'overlaps', 'touches', 'within']
         self.check_config()
 
     def check_config(self):
