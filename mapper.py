@@ -23,7 +23,7 @@ class Mapper:
     def map(self, to_file=True):
         self.info_logger.logger.log(INFO, "Mapping started...")
         start = time.time()
-        relation = self.config.get_relation()
+        relation = 'within'  # Default
         source_query_hash = self.source_sparql.get_query_hash()
         target_query_hash = self.target_sparql.get_query_hash()
         source_offset = self.config.get_offset('source')
@@ -63,27 +63,38 @@ class Mapper:
             relation = 'ST_TOUCHES'
         elif self.relation == 'within':
             relation = 'ST_WITHIN'
-        elif self.relaton == 'distance':
-            self.relation = 'ST_DISTANCE'
-        elif self.relation == 'hausdorff_distance':
-            self.relation = 'ST_HAUSDORFFDISTANCE'
         elif self.relation == 'distance_within':
-            self.relation = 'ST_DWITHIN'
+            relation = 'ST_DWITHIN'
+        elif self.relation == 'distance':
+            relation = 'ST_DISTANCE'
+        elif self.relation == 'hausdorff_distance':
+            relation = 'ST_HAUSDORFFDISTANCE'
+
+        if self.relation == 'distance' or self.relation == 'hausdorff_distance':
+            query = """
+            SELECT {}(source_data.geo, target_data.geo) AS distance, source_data.\"{}\" AS source_uri, target_data.\"{}\" AS target_uri
+            FROM ({}) AS source_data, ({}) AS target_data
+            """.format(relation, self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query)
+        else:
+            query = """
+            SELECT source_data.\"{}\" AS source_uri, target_data.\"{}\" AS target_uri
+            FROM ({}) AS source_data
+            INNER JOIN
+            ({}) AS target_data
+            ON {}(source_data.geo, target_data.geo)
+            """.format(self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query, relation)
 
         connection = psycopg2.connect(self.config.get_database_string())
         cursor = connection.cursor()
-        cursor.execute("""
-        SELECT source_data.\"{}\" AS source_uri, target_data.\"{}\" AS target_uri
-        FROM ({}) AS source_data
-	    INNER JOIN
-	    ({}) AS target_data
-        ON {}(source_data.geo, target_data.geo)
-        """.format(self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query, relation))
+        cursor.execute(query)
 
-        data_frame = DataFrame(cursor.fetchall())
+        if self.relation == 'distance' or self.relation == 'hausdorff_distance':
+            data_frame = DataFrame(cursor.fetchall(), columns=['distance', 'source_uri', 'target_uri'])
+        else:
+            data_frame = DataFrame(cursor.fetchall(), columns=['source_uri', 'target_uri'])
+
         cursor.close()
         connection.close()
-        data_frame.columns = ['source_uri', 'target_uri']
         data_frame.insert(1, 'relation', self.relation)
         end = time.time()
 
