@@ -23,7 +23,7 @@ class Mapper:
     def map(self, to_file=True):
         self.info_logger.logger.log(INFO, "Mapping started...")
         start = time.time()
-        relation = 'within'  # Default
+        relation_function = 'ST_WITHIN'  # Default
         source_query_hash = self.source_sparql.get_query_hash()
         target_query_hash = self.target_sparql.get_query_hash()
         source_offset = self.config.get_offset('source')
@@ -44,37 +44,37 @@ class Mapper:
             target_query = 'SELECT * FROM {} WHERE geo IS NOT NULL OFFSET {}'.format('table_' + target_query_hash, target_offset)
 
         if self.relation == 'contains':
-            relation = 'ST_CONTAINS'
+            relation_function = 'ST_CONTAINS'
         elif self.relation == 'contains_properly':
-            relation = 'ST_CONTAINSPROPERLY'
+            relation_function = 'ST_CONTAINSPROPERLY'
         elif self.relation == 'covers':
-            relation = 'ST_COVERS'
+            relation_function = 'ST_COVERS'
         elif self.relation == 'covered_by':
-            relation = 'ST_COVEREDBY'
+            relation_function = 'ST_COVEREDBY'
         elif self.relation == 'covers':
-            relation = 'ST_CROSSES'
+            relation_function = 'ST_CROSSES'
         elif self.relation == 'disjoint':
-            relation = 'ST_DISJOINT'
+            relation_function = 'ST_DISJOINT'
         elif self.relation == 'intersects':
-            relation = 'ST_INTERSECTS'
+            relation_function = 'ST_INTERSECTS'
         elif self.relation == 'overlaps':
-            relation = 'ST_OVERLAPS'
+            relation_function = 'ST_OVERLAPS'
         elif self.relation == 'touches':
-            relation = 'ST_TOUCHES'
+            relation_function = 'ST_TOUCHES'
         elif self.relation == 'within':
-            relation = 'ST_WITHIN'
+            relation_function = 'ST_WITHIN'
         elif self.relation == 'distance_within':
-            relation = 'ST_DWITHIN'
+            relation_function = 'ST_DWITHIN'
         elif self.relation == 'distance':
-            relation = 'ST_DISTANCE'
+            relation_function = 'ST_DISTANCE'
         elif self.relation == 'hausdorff_distance':
-            relation = 'ST_HAUSDORFFDISTANCE'
+            relation_function = 'ST_HAUSDORFFDISTANCE'
 
         if self.relation == 'distance' or self.relation == 'hausdorff_distance':
             query = """
             SELECT {}(source_data.geo, target_data.geo) AS distance, source_data.\"{}\" AS source_uri, target_data.\"{}\" AS target_uri
             FROM ({}) AS source_data, ({}) AS target_data
-            """.format(relation, self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query)
+            """.format(relation_function, self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query)
         else:
             query = """
             SELECT source_data.\"{}\" AS source_uri, target_data.\"{}\" AS target_uri
@@ -82,7 +82,7 @@ class Mapper:
             INNER JOIN
             ({}) AS target_data
             ON {}(source_data.geo, target_data.geo)
-            """.format(self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query, relation)
+            """.format(self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query, relation_function)
 
         connection = psycopg2.connect(self.config.get_database_string())
         cursor = connection.cursor()
@@ -112,6 +112,7 @@ class Mapper:
         formatted_results = None
         output_format = self.config.get_output_format()
 
+        # TODO: Turtle output for distance measures
         if output_format == 'turtle':
             results.insert(2, 'end', '.')
             results[self.config.get_var_uri('source')] = '<' + results[self.config.get_var_uri('source')].astype(str) + '>'
