@@ -198,8 +198,12 @@ class Cache:
         cursor.copy_expert(sql="COPY {} (\"{}\", \"{}\", \"{}\") FROM STDIN WITH CSV HEADER DELIMITER AS ';'".format(
             'table_' + self.sparql.query_hash, self.config.get_var_uri(self.type), self.config.get_var_shape(self.type), 'server_offset'),
             file=output)
-        cursor.execute("UPDATE {} SET geo = ST_GeomFromText({}) WHERE geo IS NULL AND ST_ISVALID(ST_GeomFromText({}))".format(
-            'table_' + self.sparql.query_hash, self.config.get_var_shape(self.type), self.config.get_var_shape(self.type)))
+        cursor.execute("""
+        UPDATE {} 
+        SET geo = ST_GeomFromText({}) 
+        WHERE geo IS NULL AND {} NOT LIKE '%EMPTY' AND ST_ISVALID(ST_GeomFromText({}))""".format(
+            'table_' + self.sparql.query_hash, self.config.get_var_shape(self.type),
+            self.config.get_var_shape(self.type), self.config.get_var_shape(self.type)))
         connection.commit()
         cursor.close()
 
