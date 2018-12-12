@@ -11,9 +11,30 @@ The specifications of the relevant properties are provided in a configuration fi
 ## Installation
 
 1. Install Python3.
-2. Install the following Python libraries: more_itertools, pandas, psycopg2
+2. Install the following Python libraries: more_itertools, pandas, psycopg2, SPARQLWrapper
 3. Install PostgreSQL and PostGIS
 4. Create a database and add extensions postgis and postgis_topology
+
+## Measures
+
+The following measures are supported:
+
+- contains
+- contains_properly
+- covered_by
+- covers
+- crosses
+- disjoint
+- distance
+- distance_within
+- equals
+- hausdorff_distance
+- intersects
+- overlaps
+- touches
+- within
+
+The distance_within measure needs a threshold to work.
 
 ## Run
 
