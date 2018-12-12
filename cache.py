@@ -270,8 +270,17 @@ class Cache:
         return len(data_frame) == 1
 
     def count_invalid_geometries(self, connection):
+        offset = self.config.get_offset(self.type)
+        limit = self.config.get_limit(self.type)
+        query = "SELECT COUNT(*) AS count FROM {} WHERE geo IS NULL".format('table_' + self.sparql.query_hash)
+
+        if limit > 0:
+            query += " AND server_offset BETWEEN {} AND {}".format(offset, limit)
+        else:
+            query += " AND server_offset >= {}".format(offset)
+
         cursor = connection.cursor()
-        cursor.execute("SELECT COUNT(*) AS count FROM {} WHERE geo IS NULL".format('table_' + self.sparql.query_hash))
+        cursor.execute(query)
         result = cursor.fetchone()
         cursor.close()
 
