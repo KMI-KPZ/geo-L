@@ -83,8 +83,6 @@ class Cache:
                         self.download_results(connection, interval_offset, interval_limit, chunksize)
 
                     new_data = True
-
-                self.info_logger.logger.log(INFO, "Data already cached..")
         else:
             if max_server_offset == 0 or min_offset > max_server_offset:
                 self.info_logger.logger.log(INFO, "Cache is missing data, downloading missing data...")
@@ -135,6 +133,8 @@ class Cache:
         if new_data:
             end = time.time()
             self.info_logger.logger.log(INFO, "Retrieving statements took {}s".format(round(end - start, 4)))
+        else:
+            self.info_logger.logger.log(INFO, "Data already cached..")
 
         invalid_geometries_count = self.count_invalid_geometries(connection)
         self.info_logger.logger.log(INFO, "{} invalid geometries in {}".format(invalid_geometries_count, self.type))
