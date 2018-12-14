@@ -43,7 +43,7 @@ class Cache:
         if limit > 0:
             max_offset = offset + limit - 1
 
-            if (min_server_offset > 0 and max_offset < min_server_offset) or (max_server_offset == 0):
+            if (min_server_offset != None and min_server_offset > 0 and max_offset < min_server_offset) or (max_server_offset == None):
                 self.info_logger.logger.log(INFO, "Cache is missing data, downloading missing data...")
                 self.download_results(connection, offset, limit, chunksize)
                 new_data = True
@@ -84,15 +84,22 @@ class Cache:
 
                     new_data = True
         else:
-            if max_server_offset == 0 or min_offset > max_server_offset:
+            if max_server_offset == None:
                 self.info_logger.logger.log(INFO, "Cache is missing data, downloading missing data...")
                 self.download_results(connection, offset, limit, chunksize)
                 new_data = True
+            elif min_offset > max_server_offset:
+                more_results = self.check_more_results(min_offset + 1)
+
+                if more_results:
+                    self.info_logger.logger.log(INFO, "Cache is missing data, downloading missing data...")
+                    self.download_results(connection, offset, limit, chunksize)
+                    new_data = True
             elif min_offset < min_server_offset:
                 missing_interval = [(min_offset, min_server_offset - 1)]
                 missing_intervals = self.find_missing_data(connection, min_offset, missing_limit)
                 missing_intervals = missing_interval + missing_intervals
-                more_results = self.check_more_results(min_offset + 1)
+                more_results = self.check_more_results(max_server_offset + 1)
 
                 if more_results:
                     missing_intervals + [(max_server_offset + 1,)]
@@ -111,7 +118,7 @@ class Cache:
                 new_data = True
             else:
                 missing_intervals = self.find_missing_data(connection, min_offset, max_server_offset)
-                more_results = self.check_more_results(min_offset + 1)
+                more_results = self.check_more_results(max_server_offset + 1)
 
                 if more_results:
                     missing_intervals += [(max_server_offset + 1,)]
@@ -224,16 +231,7 @@ class Cache:
         result = cursor.fetchone()
         cursor.close()
 
-        min_offset = 0
-        max_offset = 0
-
-        if result[0] != None:
-            min_offset = result[0]
-
-        if result[1] != None:
-            max_offset = result[1]
-
-        return min_offset, max_offset
+        return result[0], result[1]
 
     def find_missing_data(self, connection, offset, limit):
         cursor = connection.cursor()
