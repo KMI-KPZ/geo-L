@@ -34,14 +34,20 @@ class Mapper:
             source_query = 'SELECT * FROM {} WHERE server_offset BETWEEN {} AND {} AND geo IS NOT NULL'.format(
                 'table_' + source_query_hash, source_offset, source_max_offset)
         else:
-            source_query = 'SELECT * FROM {} WHERE geo IS NOT NULL OFFSET {}'.format('table_' + source_query_hash, source_offset)
+            source_query = 'SELECT * FROM {} WHERE geo IS NOT NULL'.format('table_' + source_query_hash)
+
+            if source_offset > 0:
+                source_query += ' AND server_offset >= {}'.format(source_offset)
 
         if self.config.get_limit('target') > 0:
             target_max_offset = target_offset + self.config.get_limit('target') - 1
             target_query = 'SELECT * FROM {} WHERE server_offset BETWEEN {} AND {} AND geo IS NOT NULL'.format(
                 'table_' + target_query_hash, target_offset, target_max_offset)
         else:
-            target_query = 'SELECT * FROM {} WHERE geo IS NOT NULL OFFSET {}'.format('table_' + target_query_hash, target_offset)
+            target_query = 'SELECT * FROM {} WHERE geo IS NOT NULL'.format('table_' + target_query_hash)
+
+            if target_offset > 0:
+                target_query += ' AND server_offset >= {}'.format(target_offset)
 
         if self.relation == 'contains':
             relation_function = 'ST_CONTAINS'
