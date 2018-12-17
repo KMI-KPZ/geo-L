@@ -208,9 +208,9 @@ class Cache:
         cursor.execute("""
         UPDATE {} 
         SET geo = ST_GeomFromText({}) 
-        WHERE geo IS NULL AND {} NOT LIKE '%EMPTY' AND ST_ISVALID(ST_GeomFromText({}))""".format(
+        WHERE geo IS NULL AND {} NOT LIKE '%EMPTY' AND {} NOT LIKE '%nan%' AND ST_ISVALID(ST_GeomFromText({}))""".format(
             'table_' + self.sparql.query_hash, self.config.get_var_shape(self.type),
-            self.config.get_var_shape(self.type), self.config.get_var_shape(self.type)))
+            self.config.get_var_shape(self.type), self.config.get_var_shape(self.type), self.config.get_var_shape(self.type)))
         connection.commit()
         cursor.close()
 
