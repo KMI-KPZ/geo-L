@@ -18,7 +18,14 @@ class Mapper:
         self.relation = config.get_relation()
 
         self.info_logger = logger
-        self.result_logger = ResultLogger('ResultLogger', source_sparql.get_query_hash(), target_sparql.get_query_hash())
+        #self.result_logger = ResultLogger('ResultLogger', source_sparql.get_query_hash(), target_sparql.get_query_hash())
+
+        source_offset = self.config.get_offset('source')
+        source_limit = self.config.get_limit('source')
+        target_offset = self.config.get_offset('target')
+        target_limit = self.config.get_limit('target')
+        self.result_logger = ResultLogger('ResultLogger', source_sparql.get_query_hash(), source_offset, source_limit, target_sparql.get_query_hash(),target_offset, target_limit)
+
 
     def map(self, to_file=True):
         self.info_logger.logger.log(INFO, "Mapping started...")
