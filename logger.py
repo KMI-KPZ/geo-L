@@ -21,12 +21,12 @@ class ErrorLogger:
 
 
 class ResultLogger:
-    def __init__(self, name, source_hash, source_offset, source_limit, target_hash,target_offset, target_limit):
-        self.logger = logging.getLogger('{}#{}#{}_{}#{}#{}_{}'.format(source_hash, source_offset, source_limit, target_hash, target_offset, target_limit, name))
+    def __init__(self, name, source_hash, source_offset, source_limit, relation,target_hash,target_offset, target_limit):
+        self.logger = logging.getLogger('{}#{}#{}_{}_{}#{}#{}_{}'.format(source_hash, source_offset, source_limit, relation, target_hash, target_offset, target_limit, name))
         self.logger.setLevel(logging.INFO)
         self.logger.propagate = False
 
-        logger_handler = logging.FileHandler(join('output', '{}#{}#{}_{}#{}#{}.log'.format(source_hash, source_offset, source_limit, target_hash, target_offset, target_limit)), mode='w')
+        logger_handler = logging.FileHandler(join('output', '{}#{}#{}_{}_{}#{}#{}.log'.format(source_hash, source_offset, source_limit, relation, target_hash, target_offset, target_limit)), mode='w')
         logger_handler.setLevel(logging.INFO)
         logger_formater = logging.Formatter('%(message)s')
         logger_handler.setFormatter(logger_formater)
