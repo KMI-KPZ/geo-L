@@ -18,7 +18,14 @@ class Mapper:
         self.relation = config.get_relation()
 
         self.info_logger = logger
-        self.result_logger = ResultLogger('ResultLogger', source_sparql.get_query_hash(), target_sparql.get_query_hash())
+        #self.result_logger = ResultLogger('ResultLogger', source_sparql.get_query_hash(), target_sparql.get_query_hash())
+
+        source_offset = self.config.get_offset('source')
+        source_limit = self.config.get_limit('source')
+        target_offset = self.config.get_offset('target')
+        target_limit = self.config.get_limit('target')
+        self.result_logger = ResultLogger('ResultLogger', source_sparql.get_query_hash(), source_offset, source_limit, self.relation, target_sparql.get_query_hash(),target_offset, target_limit)
+
 
     def map(self, to_file=True):
         self.info_logger.logger.log(INFO, "Mapping started...")
@@ -57,7 +64,7 @@ class Mapper:
             relation_function = 'ST_COVERS'
         elif self.relation == 'covered_by':
             relation_function = 'ST_COVEREDBY'
-        elif self.relation == 'covers':
+        elif self.relation == 'crosses':
             relation_function = 'ST_CROSSES'
         elif self.relation == 'disjoint':
             relation_function = 'ST_DISJOINT'
@@ -91,7 +98,7 @@ class Mapper:
             ({}) AS target_data
             ON {}(source_data.geo, target_data.geo)
             """.format(self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query, relation_function)
-
+        self.info_logger.logger.log(INFO,"DEBUG query\n{}".format(query))
         connection = psycopg2.connect(self.config.get_database_string())
         cursor = connection.cursor()
         cursor.execute(query)
@@ -100,6 +107,7 @@ class Mapper:
             data_frame = DataFrame(cursor.fetchall(), columns=['distance', 'source_uri', 'target_uri'])
         else:
             data_frame = DataFrame(cursor.fetchall(), columns=['source_uri', 'target_uri'])
+            self.info_logger.logger.log(INFO,"DEBUG data_frame.head()\n {}".format(data_frame.head().to_string()))
 
         cursor.close()
         connection.close()
@@ -121,13 +129,13 @@ class Mapper:
         output_format = self.config.get_output_format()
 
         # TODO: Turtle output for distance measures
-        if output_format == 'turtle':
+        if output_format.lower() in ['turtle','nt']:
             results.insert(2, 'end', '.')
-            results[self.config.get_var_uri('source')] = '<' + results[self.config.get_var_uri('source')].astype(str) + '>'
-            results[self.config.get_relation()] = '<' + results[self.config.get_relation()].astype(str) + '>'
-            results[self.config.get_var_uri('target')] = '<' + results[self.config.get_var_uri('target')].astype(str) + '>'
-            formatted_results = results.to_csv(columns=[self.config.get_var_uri('source'), 'relation', self.config.get_var_uri(
-                'target'), 'end'], header=False, index=False, index_label=False, sep=' ')
+            
+            results['source_uri'] = '<' + results['source_uri'].astype(str) + '>'
+            results['relation'] = self.relationToGeoSPARQLFunc(self.relation)
+            results['target_uri'] = '<' + results['target_uri'].astype(str) + '>'
+            formatted_results = results.to_csv(columns=['source_uri', 'relation', 'target_uri', 'end'], header=False, index=False, index_label=False, sep=' ')    
         elif output_format == 'json':
             formatted_results = results.to_json(na='drop')
         else:
@@ -139,3 +147,25 @@ class Mapper:
                                                    header=True, index=False, index_label=False)
 
         return formatted_results
+
+    def relationToGeoSPARQLFunc(self, relation):
+        #geofURITemplate = "<http://www.opengis.net/def/function/geosparql/{}>"
+        switcher = {
+
+            'contains'  :   '<http://www.opengis.net/def/function/geosparql/sfContains>',
+            'covers'    :   '<http://www.opengis.net/def/function/geosparql/ehCovers>', 
+            'covered_by':   '<http://www.opengis.net/def/function/geosparql/ehCoveredBy>', 
+            'crosses'   :   '<http://www.opengis.net/def/function/geosparql/sfCrosses>',
+            'disjoint'  :   '<http://www.opengis.net/def/function/geosparql/sfDisjoint>',
+            'equals'    :   '<http://www.opengis.net/def/function/geosparql/sfEquals>',
+            'intersects':   '<http://www.opengis.net/def/function/geosparql/sfIntersects>',
+            'overlaps'  :   '<http://www.opengis.net/def/function/geosparql/sfOverlaps>',
+            'touches'   :   '<http://www.opengis.net/def/function/geosparql/sfTouches>',
+            'within'    :   '<http://www.opengis.net/def/function/geosparql/sfWithin>',
+            'distance_within':  "TODO_DISTANCE_WITHIN",
+            'distance'  :   "TODO_DISTANCE",
+            'hausdorff_distance':  "TODO_HAUSDORFF_DISTANCE"
+        }
+        
+        return switcher.get(relation,"nothing")
+    

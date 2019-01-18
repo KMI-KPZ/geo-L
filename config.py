@@ -176,8 +176,8 @@ class Config:
             return 0
 
     def get_output_format(self):
-        if 'output' in self.config:
-            return self.config['output']
+        if 'output_format' in self.config:
+            return self.config['output_format']
         else:
             return None
 
