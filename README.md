@@ -11,7 +11,7 @@ The specifications of the relevant properties are provided in a configuration fi
 ## Installation
 
 1. Install Python3.
-2. Install the following Python libraries: more_itertools, pandas, psycopg2, SPARQLWrapper
+2. Install the following Python libraries: more_itertools, pandas, psycopg2, SPARQLWrapper, tornado
 3. Install PostgreSQL and PostGIS
 4. Create a database and add extensions postgis and postgis_topology
 
