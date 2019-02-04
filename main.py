@@ -35,6 +35,10 @@ def create_dirs():
 
 
 def run(config_string, database_config_string, to_file=True):
+    # TODO: Quick fix for Hackatron -> Needs better handling when using api
+    if database_config_string == None:
+        database_config_string = load_config('../geoLIMES/configs/postgresql.json')
+
     create_dirs()
     results = None
 
