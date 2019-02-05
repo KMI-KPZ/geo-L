@@ -26,5 +26,5 @@
     "measure": {
         "relation": "within"
     },
-    "result_format": "csv"
+    "output_format": "csv"
 }
