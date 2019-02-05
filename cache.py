@@ -161,7 +161,7 @@ class Cache:
                 run = False
 
             self.info_logger.logger.log(INFO, "Getting statements from {} to {}".format(offset, current_max))
-            result = self.sparql.query(offset, chunksize)
+            result = self.sparql.query(offset, chunksize)  # TODO: Retry if 502 (Exception and retry counter)
             result_info = result.info()
 
             if 'x-sparql-maxrows' in result_info:
@@ -200,15 +200,16 @@ class Cache:
         output = StringIO()
         data_frame.to_csv(output, sep=';', index=False)
         output.seek(0)
+        data_frame_column_headers = list(data_frame)  # TODO: Check if length is 3 and throw exception if not
 
         cursor = connection.cursor()
         cursor.copy_expert(sql="COPY {} (\"{}\", \"{}\", \"{}\") FROM STDIN WITH CSV HEADER DELIMITER AS ';'".format(
-            'table_' + self.sparql.query_hash, self.config.get_var_uri(self.type), self.config.get_var_shape(self.type), 'server_offset'),
+            'table_' + self.sparql.query_hash, data_frame_column_headers[0], data_frame_column_headers[1], data_frame_column_headers[2]),
             file=output)
         cursor.execute("""
         UPDATE {} 
-        SET geo = ST_GeomFromText({}) 
-        WHERE geo IS NULL AND {} NOT LIKE '%EMPTY' AND {} NOT LIKE '%nan%' AND ST_ISVALID(ST_GeomFromText({}))""".format(
+        SET geo = ST_GeomFromText("{}") 
+        WHERE geo IS NULL AND "{}" NOT LIKE '%EMPTY' AND "{}" NOT LIKE '%nan%' AND ST_ISVALID(ST_GeomFromText("{}"))""".format(
             'table_' + self.sparql.query_hash, self.config.get_var_shape(self.type),
             self.config.get_var_shape(self.type), self.config.get_var_shape(self.type), self.config.get_var_shape(self.type)))
         connection.commit()
