@@ -87,11 +87,15 @@ class Mapper:
 
         if self.relation == 'distance' or self.relation == 'hausdorff_distance':
             query = """
+            set parallel_setup_cost = 10;
+            set parallel_tuple_cost = 0.001;
             SELECT {}(source_data.geo, target_data.geo) AS distance, source_data.\"{}\" AS source_uri, target_data.\"{}\" AS target_uri
             FROM ({}) AS source_data, ({}) AS target_data
             """.format(relation_function, self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query)
         else:
             query = """
+            set parallel_setup_cost = 10;
+            set parallel_tuple_cost = 0.001;
             SELECT source_data.\"{}\" AS source_uri, target_data.\"{}\" AS target_uri
             FROM ({}) AS source_data
             INNER JOIN
