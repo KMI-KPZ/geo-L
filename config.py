@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from json import loads
+
 
 class Config:
     def __init__(self, config, database_config):
@@ -237,4 +239,4 @@ class ConfigNotValidError(Exception):
 
 def load_config(config_file_path):
     with open(config_file_path, 'r') as config_file:
-        return config_file.read()
+        return loads(config_file.read())
