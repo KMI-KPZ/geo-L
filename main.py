@@ -2,17 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from argparse import ArgumentParser
-from json import JSONDecodeError, loads
-from os import makedirs
-from os.path import exists, isdir
 from sys import path
-from urllib.error import HTTPError
 
-from cache import Cache
-from config import Config, ConfigNotValidError, load_config
-from logger import InfoLogger
-from mapper import Mapper
-from sparql import SPARQL
+from config import load_config
+from geolimes import goeLIMES
 
 path.append("${HOME}/.local/lib/python3.7/site-packages/")
 
@@ -26,6 +19,7 @@ def get_arguments():
     return arguments.config_file, arguments.database_config_file
 
 
+<<<<<<< HEAD
 def create_dirs():
     if not exists('logs') or not isdir('logs'):
         makedirs('logs')
@@ -71,12 +65,15 @@ def run(config_string, database_config_string, to_file=True):
     return results
 
 
+=======
+>>>>>>> fbe283fba1b18701e9ed5289acf94f9515579177
 def main():
     try:
         connfig_file_path, database_config_file_path = get_arguments()
         config = load_config(connfig_file_path)
         database_config = load_config(database_config_file_path)
-        run(config, database_config)
+        limes = goeLIMES(database_config)
+        limes.run(config)
     except FileNotFoundError as e:
         print(e)
 

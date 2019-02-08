@@ -62,7 +62,11 @@ class Cache:
                     min_offset = min_server_offset
 
                 if max_offset > max_server_offset:
-                    intervals.append((max_server_offset + 1, max_offset))
+                    more_results = self.check_more_results(max_server_offset + 1)
+
+                    if more_results:
+                        intervals.append((max_server_offset + 1, max_offset))
+                    
                     max_offset = max_server_offset
 
                 missing_limit = max_offset - min_offset + 1
