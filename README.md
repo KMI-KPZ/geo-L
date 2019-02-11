@@ -10,8 +10,8 @@ The specifications of the relevant properties are provided in a configuration fi
 
 ## Installation
 
-1. Install Python3.
-2. Install the following Python libraries: more_itertools, pandas, psycopg2, SPARQLWrapper, tornado
+1. Install Python3
+2. Install the required libraries with `pip install -r requirements.txt`
 3. Install PostgreSQL and PostGIS
 4. Create a database and add extensions postgis and postgis_topology
 
@@ -38,7 +38,19 @@ The distance_within measure needs a threshold to work.
 
 ## Run
 
+### Command line
+
 To run the program, a config file and a database config file are needed. Example configs are in the configs folder.
-```
+```bash
 python main.py -c config.json -d postgresql_config.json
 ```
+
+### Server with Rest API
+
+To run the server, a database config file is needed.
+
+```bash
+python server.py -d postgresql_config.json
+```
+
+Send a Post request to `serverurl:8888/limes` with a Json body, which contains the geoLIMES config.
