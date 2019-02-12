@@ -37,10 +37,11 @@ The following measures are supported:
 The distance_within measure needs a threshold to work.
 
 ## Run
+geoLIMES can be run from the command line or as server with a Rest API.
 
 ### Command line
 
-To run the program, a config file and a database config file are needed. Example configs are in the configs folder.
+To run geoLIMES from the command line, a config file and a database config file are needed. Example configs are in the configs folder.
 ```bash
 python main.py -c config.json -d postgresql_config.json
 ```
