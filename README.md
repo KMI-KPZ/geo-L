@@ -6,8 +6,6 @@ GeoLIMES retrieves specified properties of spatial objects from source and targe
 
 The specifications of the relevant properties are provided in a configuration file, which allows constraining the number of object by specifying offset and limit . A dataset can be created through properties which already exist in the graph, and, in addition, GeoLimes allows direct construction of ad-hoc values through a SPARQL select statement for a given resource.
 
-[Source code](https://git.informatik.uni-leipzig.de/mam10kzu/Python-LIMES)
-
 ## Installation
 
 1. Install Python3
@@ -41,7 +39,7 @@ geoLIMES can be run from the command line or as server with a Rest API.
 
 ### Command line
 
-To run geoLIMES from the command line, a config file and a database config file are needed. Example configs are in the configs folder.
+To run geoLIMES from the command line, a config file and a database config file are needed. Example configs are in the configs folder. (Also see README in configs folder)
 ```bash
 python main.py -c config.json -d postgresql_config.json
 ```
