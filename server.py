@@ -4,7 +4,6 @@
 from argparse import ArgumentParser
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
-from tornado.options import define, options
 from tornado.web import Application, RequestHandler
 
 import json
@@ -14,7 +13,7 @@ import sys
 from config import load_config
 from geolimes import goeLIMES
 
-define('port', default=8888, help='Server port')
+DEFAULT_PORT = 8888
 
 
 class geoLIMESHandler(RequestHandler):
@@ -48,9 +47,9 @@ class geoLIMESHandler(RequestHandler):
 def get_arguments():
     parser = ArgumentParser(description="Python LIMES")
     parser.add_argument("-d", "--database", type=str, dest="database_config_file", help="Path to a database config file", required=True)
+    parser.add_argument("-p", "--port", type=str, dest="server_port", help="Server Port")
     parser.add_argument("-v", "--version", action="version", version="0.0.1", help="Show program version and exit")
-    arguments = parser.parse_args()
-    return arguments.database_config_file
+    return parser.parse_args()
 
 
 def create_app(geolimes):
@@ -60,14 +59,25 @@ def create_app(geolimes):
 
 
 def main():
-    database_config_file_path = get_arguments()
-    database_config = load_config(database_config_file_path)
+    arguments = get_arguments()
+    database_config = load_config(arguments.database_config_file)
     geolimes = goeLIMES(database_config)
+
+    if arguments.server_port != None:
+        port = arguments.server_port
+
+        if port.isdigit():
+            port = int(port)
+        else:
+            print("The server port is not valid, using default port 8888")
+            port = DEFAULT_PORT
+    else:
+        port = DEFAULT_PORT
 
     app = create_app(geolimes)
     http_server = HTTPServer(app)
-    http_server.listen(options.port)
-    print("Server started")
+    http_server.listen(port)
+    print("Server started at Port {}".format(port))
     IOLoop.current().start()
 
 
