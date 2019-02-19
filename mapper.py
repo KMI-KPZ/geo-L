@@ -102,7 +102,6 @@ class Mapper:
             ({}) AS target_data
             ON {}(source_data.geo, target_data.geo)
             """.format(self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query, relation_function)
-        self.info_logger.logger.log(INFO,"DEBUG query\n{}".format(query))
         connection = psycopg2.connect(self.config.get_database_string())
         cursor = connection.cursor()
         cursor.execute(query)
@@ -111,7 +110,6 @@ class Mapper:
             data_frame = DataFrame(cursor.fetchall(), columns=['distance', 'source_uri', 'target_uri'])
         else:
             data_frame = DataFrame(cursor.fetchall(), columns=['source_uri', 'target_uri'])
-            self.info_logger.logger.log(INFO,"DEBUG data_frame.head()\n {}".format(data_frame.head().to_string()))
 
         cursor.close()
         connection.close()
