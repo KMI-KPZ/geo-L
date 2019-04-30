@@ -2,9 +2,9 @@
 
 A tool for discovery of geo-spatial links.
 
-GeoLIMES retrieves specified properties of spatial objects from source and target datasets, through their respective SPARQL endpoints, and finds topological relations between objects in source and target objects according to topological predicates.
+Geo-L retrieves specified properties of spatial objects from source and target datasets, through their respective SPARQL endpoints, and finds topological relations between objects in source and target objects according to topological predicates.
 
-The specifications of the relevant properties are provided in a configuration file, which allows constraining the number of object by specifying offset and limit . A dataset can be created through properties which already exist in the graph, and, in addition, GeoLimes allows direct construction of ad-hoc values through a SPARQL select statement for a given resource.
+The specifications of the relevant properties are provided in a configuration file, which allows constraining the number of object by specifying offset and limit . A dataset can be created through properties which already exist in the graph, and, in addition, Geo-L allows direct construction of ad-hoc values through a SPARQL select statement for a given resource.
 
 ## Installation
 
@@ -35,11 +35,11 @@ The following measures are supported:
 The distance_within measure needs a threshold to work.
 
 ## Run
-geoLIMES can be run from the command line or as server with a Rest API.
+Geo-L can be run from the command line or as server with a Rest API.
 
 ### Command line
 
-To run geoLIMES from the command line, a config file and a database config file are needed. Example configs are in the configs folder. (Also see README in configs folder)
+To run geo-L from the command line, a config file and a database config file are needed. Example configs are in the configs folder. (Also see README in configs folder)
 ```bash
 python main.py -c config.json -d postgresql_config.json
 ```
@@ -52,4 +52,4 @@ To run the server, a database config file is needed.
 python server.py -d postgresql_config.json
 ```
 
-Send a Post request to `serverurl:8888/limes` with a Json body, which contains the geoLIMES config.
+Send a Post request to `serverurl:8888/limes` with a Json body, which contains the geo-L config.
