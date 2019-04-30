@@ -1,4 +1,4 @@
-# GeoLIMES
+# Geo-L
 
 A tool for discovery of geo-spatial links.
 
