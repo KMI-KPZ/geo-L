@@ -1,6 +1,6 @@
 # Configs
 
-Two configs are needed to run geoLIMES, a database config and a run config.
+Two configs are needed to run geo-L, a database config and a run config.
 
 ## Database config
 
