@@ -164,7 +164,7 @@ class Mapper:
             'overlaps'  :   '<http://www.opengis.net/def/function/geosparql/sfOverlaps>',
             'touches'   :   '<http://www.opengis.net/def/function/geosparql/sfTouches>',
             'within'    :   '<http://www.opengis.net/def/function/geosparql/sfWithin>',
-            'distance_within':  "TODO_DISTANCE_WITHIN",
+            'distance_within':  "<stDWithin>",
             'distance'  :   "TODO_DISTANCE",
             'hausdorff_distance':  "TODO_HAUSDORFF_DISTANCE"
         }
