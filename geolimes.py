@@ -30,10 +30,18 @@ class goeLIMES:
             info_logger = InfoLogger('InfoLogger', '{}_{}'.format(source_sparql.get_query_hash(), target_sparql.get_query_hash()))
 
             source_cache = Cache(info_logger,  config, source_sparql, 'source')
-            source_cache.create_cache()
+
+            if config.get_endpoint_type('source') == 0:
+                source_cache.create_cache()
+            elif config.get_endpoint_type('source') == 1:
+                source_cache.create_cache_file()
 
             target_cache = Cache(info_logger, config, target_sparql, 'target')
-            target_cache.create_cache()
+
+            if config.get_endpoint_type('target') == 0:
+                target_cache.create_cache()
+            elif config.get_endpoint_type('target') == 1:
+                target_cache.create_cache_file()
 
             mapper = Mapper(info_logger, config, source_sparql, target_sparql)
             results = mapper.map(to_file)
