@@ -1,0 +1,31 @@
+{
+    "source": {
+        "id": "waterbodies",
+        "rawquery": "PREFIX geo: <http://www.opengis.net/ont/geosparql#> PREFIX foodieWaterBody: <http://foodie-cloud.com/model/foodie/water-body#> SELECT ?waterBody ?waterBodyGeometryCoords  WHERE {?waterBody a foodieWaterBody:WaterBody.  ?waterBody geo:hasGeometry/ogcgs:asWKT ?waterBodyGeometryCoords.}",
+        "endpoint": "https://www.foodie-cloud.org/sparql",
+        "var": {
+            "uri": "waterBody",
+            "shape": "waterBodyGeometryCoords"
+        },
+        "offset": 0,
+        "limit": 100000,
+        "chunksize": 100000
+    },
+    "target": {
+        "id": "lpis",
+        "rawquery": "select ?lpis ?lpisCoords FROM <http://w3id.org/foodie/open/cz/pLPIS_180616_WGS#> WHERE {?lpis ogcgs:asWKT ?lpisCoords}",		
+		"endpoint": "https://www.foodie-cloud.org/sparql",
+        "var": {
+            "uri": "lpis",
+            "shape": "lpisCoords"
+        },
+        "offset": 0,
+        "limit": 100000,
+        "chunksize": 10000
+    },
+    "measure": {
+        "relation": "distance_within",
+		 "threshold": 5000
+	},
+    "output": "csv"
+}
