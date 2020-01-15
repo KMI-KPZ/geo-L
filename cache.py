@@ -39,7 +39,7 @@ class Cache:
         data_frame = read_csv(result)
         data_frame_column_headers = list(data_frame)
         column_headers = [self.config.get_var_uri(self.type), self.config.get_var_shape(self.type)]
-
+        #print("column_headers",column_headers)
         for data_frame_column_header in data_frame_column_headers:
             if data_frame_column_header not in column_headers:
                 data_frame.drop(data_frame_column_header, 1, inplace=True)
@@ -48,10 +48,22 @@ class Cache:
         data_frame.to_csv(output, sep=';', index=False)
         output.seek(0)
         data_frame_column_headers = list(data_frame)  # TODO: Check if length is 3 and throw exception if not
-
+        #print("data_frame_column_headers",data_frame_column_headers)
         cursor = connection.cursor()
+        
+        # first create a temp table and then insert only records whose keys do not yet exist, to avoid duplicates
+        cursor.execute("CREATE TABLE IF NOT EXISTS {} AS SELECT * FROM {} WHERE false".format('temp_' + self.sparql.query_hash,'table_'+self.sparql.query_hash ))
+       
         cursor.copy_expert(sql="COPY {} (\"{}\", \"{}\") FROM STDIN WITH CSV HEADER DELIMITER AS ';'".format(
-            'table_' + self.sparql.query_hash, data_frame_column_headers[0], data_frame_column_headers[1]), file=output)
+            'temp_' + self.sparql.query_hash, data_frame_column_headers[0], data_frame_column_headers[1]), file=output)
+        
+         
+        cursor.execute("""
+         INSERT INTO {} 
+                SELECT * FROM {}
+                WHERE NOT EXISTS (SELECT 1 FROM {} WHERE {}.{}={}.{});""".format('table_'+self.sparql.query_hash,  'temp_'+self.sparql.query_hash, 'table_'+self.sparql.query_hash, 'table_'+self.sparql.query_hash, self.config.get_var_uri(self.type), 'temp_'+self.sparql.query_hash ,self.config.get_var_uri(self.type) ))
+       
+        cursor.execute("DELETE FROM {};".format('temp_'+self.sparql.query_hash))
 
         if self.config.get_geo_coding(self.type):
             print('geo')
