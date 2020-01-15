@@ -30,17 +30,15 @@ class goeLIMES:
             info_logger = InfoLogger('InfoLogger', '{}_{}'.format(source_sparql.get_query_hash(), target_sparql.get_query_hash()))
 
             source_cache = Cache(info_logger,  config, source_sparql, 'source')
-
-            if config.get_endpoint_type('source') == 0:
+            if config.get_endpoint_type('source') == 'remote': #0:
                 source_cache.create_cache()
-            elif config.get_endpoint_type('source') == 1:
+            elif config.get_endpoint_type('source') == 'local': #1:
                 source_cache.create_cache_file()
 
             target_cache = Cache(info_logger, config, target_sparql, 'target')
-
-            if config.get_endpoint_type('target') == 0:
+            if config.get_endpoint_type('target') == 'remote': #0:
                 target_cache.create_cache()
-            elif config.get_endpoint_type('target') == 1:
+            elif config.get_endpoint_type('target') == 'local': #1:
                 target_cache.create_cache_file()
 
             mapper = Mapper(info_logger, config, source_sparql, target_sparql)
