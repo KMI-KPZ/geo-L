@@ -96,12 +96,13 @@ class Mapper:
             query = """
             set parallel_setup_cost = 10;
             set parallel_tuple_cost = 0.001;
-            SELECT source_data.\"{}\" AS source_uri, target_data.\"{}\" AS target_uri
+            SELECT DISTINCT source_data.\"{}\" AS source_uri, target_data.\"{}\" AS target_uri
             FROM ({}) AS source_data
             INNER JOIN
             ({}) AS target_data
             ON {}(source_data.geo, target_data.geo)
             """.format(self.config.get_var_uri('source'), self.config.get_var_uri('target'), source_query, target_query, relation_function)
+        print("DEBUG: Query",query)
         connection = psycopg2.connect(self.config.get_database_string())
         cursor = connection.cursor()
         cursor.execute(query)
