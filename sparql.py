@@ -25,21 +25,20 @@ class SPARQL:
     def build_query(self, offset, limit=None):
         if self.config.get_rawquery(self.type) is not None:
             query = self.config.get_rawquery(self.type)
-            query_offset = 'OFFSET {}'.format(offset)
+            query_offset = 'OFFSET {}'.format(offset) if self.config.get_endpoint_type(self.type) == 'remote' else ''
             query = '{} {}'.format(query, query_offset)
-
+            query_limit = 'LIMIT {}'.format(limit) if self.config.get_endpoint_type(self.type) == 'remote' else ''
             if limit is None:
                 return query
-
-            query_limit = 'LIMIT {}'.format(limit)
-            return '{} {}'.format(query, query_limit)
+            query = '{} {}'.format(query, query_limit)
+            return query
         else:
             query_prefixes = self.build_prefixes()
             query_select = 'SELECT DISTINCT ?{} ?{}'.format(self.config.get_var_uri(self.type), self.config.get_var_shape(self.type))
             query_from = 'FROM <{}>'.format(self.config.get_graph(self.type))
             query_where = self.build_where()
-            query_offset = 'OFFSET {}'.format(offset)
-            query_limit = 'LIMIT {}'.format(limit)
+            query_offset = 'OFFSET {}'.format(offset) if self.config.get_endpoint_type(self.type) == 'remote' else ''
+            query_limit = 'LIMIT {}'.format(limit) if self.config.get_endpoint_type(self.type) == 'remote' else ''
             query = '{} {} {} {} {}'.format(query_prefixes, query_select, query_from, query_where, query_offset)
 
             if limit is None:
@@ -90,7 +89,7 @@ class SPARQL:
     def query(self, offset, limit=None):
         query = self.build_query(offset, limit)
 
-        if self.config.get_endpoint_type(self.type) == 0:
+        if self.config.get_endpoint_type(self.type) == 'remote': 
             sparql = SPARQLWrapper(self.config.get_endpoint(self.type))
             sparql.customHttpHeaders['Accept-Encoding'] = 'gzip'
             sparql.setQuery(query)
@@ -106,11 +105,11 @@ class SPARQL:
                 print(e)
             except SPARQLWrapperException as e:
                 print(e)
-        elif self.config.get_endpoint_type(self.type) == 1:
+        elif self.config.get_endpoint_type(self.type) == 'local': 
             endpoint = self.config.get_endpoint(self.type)
             endpoint.replace('file://', '')
             graph = Graph()
-            graph.parse(endpoint, format='n3')
+            graph.parse(endpoint, format='nt')
             result = graph.query(query)
             return result.serialize(format='csv')
 
