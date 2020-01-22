@@ -19,6 +19,74 @@ class Cache:
 
         self.info_logger = logger
 
+    def create_cache_file(self):
+        connection = psycopg2.connect(self.config.get_database_string())
+        cursor = connection.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS {}(\"{}\" VARCHAR, \"{}\" VARCHAR, server_offset BIGINT, geo GEOMETRY)".format(
+            'public.table_' + self.sparql.query_hash, self.config.get_var_uri(self.type), self.config.get_var_shape(self.type)))
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_geo_{} ON {} USING GIST(geo);".format(
+            self.sparql.query_hash, 'table_' + self.sparql.query_hash))
+        connection.commit()
+        cursor.close()
+
+        result = self.sparql.query(0)
+        csv_result = StringIO(result.decode('utf-8'))
+        self.insert_file(connection, csv_result)
+
+        connection.close()
+
+    def insert_file(self, connection, result):
+        data_frame = read_csv(result)
+        data_frame_column_headers = list(data_frame)
+        column_headers = [self.config.get_var_uri(self.type), self.config.get_var_shape(self.type)]
+        #print("column_headers",column_headers)
+        for data_frame_column_header in data_frame_column_headers:
+            if data_frame_column_header not in column_headers:
+                data_frame.drop(data_frame_column_header, 1, inplace=True)
+
+        output = StringIO()
+        data_frame.to_csv(output, sep=';', index=False)
+        output.seek(0)
+        data_frame_column_headers = list(data_frame)  # TODO: Check if length is 3 and throw exception if not
+        #print("data_frame_column_headers",data_frame_column_headers)
+        cursor = connection.cursor()
+        
+        # first create a temp table and then insert only records whose keys do not yet exist, to avoid duplicates
+        cursor.execute("CREATE TABLE IF NOT EXISTS {} AS SELECT * FROM {} WHERE false".format('temp_' + self.sparql.query_hash,'table_'+self.sparql.query_hash ))
+       
+        cursor.copy_expert(sql="COPY {} (\"{}\", \"{}\") FROM STDIN WITH CSV HEADER DELIMITER AS ';'".format(
+            'temp_' + self.sparql.query_hash, data_frame_column_headers[0], data_frame_column_headers[1]), file=output)
+        
+         
+        cursor.execute("""
+         INSERT INTO {} 
+                SELECT * FROM {}
+                WHERE NOT EXISTS (SELECT 1 FROM {} WHERE {}.{}={}.{});""".format('table_'+self.sparql.query_hash,  'temp_'+self.sparql.query_hash, 'table_'+self.sparql.query_hash, 'table_'+self.sparql.query_hash, self.config.get_var_uri(self.type), 'temp_'+self.sparql.query_hash ,self.config.get_var_uri(self.type) ))
+       
+        cursor.execute("DELETE FROM {};".format('temp_'+self.sparql.query_hash))
+
+        if self.config.get_geo_coding(self.type):
+            print('geo')
+            cursor.execute("""
+            UPDATE {} 
+            SET geo = ST_Transform(ST_GeomFromText("{}",{}),4326)
+            WHERE geo IS NULL AND "{}" NOT LIKE '%EMPTY' AND "{}" NOT LIKE '%nan%' AND ST_ISVALID(ST_Transform(ST_GeomFromText("{}",{}),4326))""".format(
+                'table_' + self.sparql.query_hash, self.config.get_var_shape(self.type), self.config.get_geo_coding(self.type),
+                self.config.get_var_shape(self.type), self.config.get_var_shape(self.type), self.config.get_var_shape(self.type),
+                self.config.get_geo_coding(self.type)))
+        else:
+            print("no geo")
+            cursor.execute("""
+            UPDATE {} 
+            SET geo = ST_GeomFromText("{}") 
+            WHERE geo IS NULL AND "{}" NOT LIKE '%EMPTY' AND "{}" NOT LIKE '%nan%' AND ST_ISVALID(ST_GeomFromText("{}"))""".format(
+                'table_' + self.sparql.query_hash, self.config.get_var_shape(self.type),
+                self.config.get_var_shape(self.type), self.config.get_var_shape(self.type), self.config.get_var_shape(self.type)))
+        connection.commit()
+        cursor.close()
+
+    # INTERNET
+
     def create_cache(self):
         start = time.time()
         offset = self.config.get_offset(self.type)
@@ -66,7 +134,7 @@ class Cache:
 
                     if more_results:
                         intervals.append((max_server_offset + 1, max_offset))
-                    
+
                     max_offset = max_server_offset
 
                 missing_limit = max_offset - min_offset + 1
@@ -210,12 +278,22 @@ class Cache:
         cursor.copy_expert(sql="COPY {} (\"{}\", \"{}\", \"{}\") FROM STDIN WITH CSV HEADER DELIMITER AS ';'".format(
             'table_' + self.sparql.query_hash, data_frame_column_headers[0], data_frame_column_headers[1], data_frame_column_headers[2]),
             file=output)
-        cursor.execute("""
-        UPDATE {} 
-        SET geo = ST_GeomFromText("{}") 
-        WHERE geo IS NULL AND "{}" NOT LIKE '%EMPTY' AND "{}" NOT LIKE '%nan%' AND ST_ISVALID(ST_GeomFromText("{}"))""".format(
-            'table_' + self.sparql.query_hash, self.config.get_var_shape(self.type),
-            self.config.get_var_shape(self.type), self.config.get_var_shape(self.type), self.config.get_var_shape(self.type)))
+
+        if self.config.get_geo_coding(self.type):
+            cursor.execute("""
+            UPDATE {} 
+            SET geo = ST_Transform(ST_GeomFromText("{}",{}),4326)
+            WHERE geo IS NULL AND "{}" NOT LIKE '%EMPTY' AND "{}" NOT LIKE '%nan%' AND ST_ISVALID(ST_Transform(ST_GeomFromText("{}",{}),4326))""".format(
+                'table_' + self.sparql.query_hash, self.config.get_var_shape(self.type), self.config.get_geo_coding(self.type),
+                self.config.get_var_shape(self.type), self.config.get_var_shape(self.type), self.config.get_var_shape(self.type),
+                self.config.get_geo_coding(self.type)))
+        else:
+            cursor.execute("""
+            UPDATE {} 
+            SET geo = ST_GeomFromText("{}") 
+            WHERE geo IS NULL AND "{}" NOT LIKE '%EMPTY' AND "{}" NOT LIKE '%nan%' AND ST_ISVALID(ST_GeomFromText("{}"))""".format(
+                'table_' + self.sparql.query_hash, self.config.get_var_shape(self.type),
+                self.config.get_var_shape(self.type), self.config.get_var_shape(self.type), self.config.get_var_shape(self.type)))
         connection.commit()
         cursor.close()
 

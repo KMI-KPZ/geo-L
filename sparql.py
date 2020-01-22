@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from hashlib import md5
+from rdflib import Graph
+from rdflib.plugins.sparql.results.csvresults import CSVResultSerializer
 from SPARQLWrapper import SPARQLWrapper, CSV
 from SPARQLWrapper.SPARQLExceptions import EndPointInternalError, EndPointNotFound, SPARQLWrapperException, Unauthorized
 
@@ -23,21 +25,20 @@ class SPARQL:
     def build_query(self, offset, limit=None):
         if self.config.get_rawquery(self.type) is not None:
             query = self.config.get_rawquery(self.type)
-            query_offset = 'OFFSET {}'.format(offset)
+            query_offset = 'OFFSET {}'.format(offset) if self.config.get_endpoint_type(self.type) == 'remote' else ''
             query = '{} {}'.format(query, query_offset)
-
+            query_limit = 'LIMIT {}'.format(limit) if self.config.get_endpoint_type(self.type) == 'remote' else ''
             if limit is None:
                 return query
-
-            query_limit = 'LIMIT {}'.format(limit)
-            return '{} {}'.format(query, query_limit)
+            query = '{} {}'.format(query, query_limit)
+            return query
         else:
             query_prefixes = self.build_prefixes()
             query_select = 'SELECT DISTINCT ?{} ?{}'.format(self.config.get_var_uri(self.type), self.config.get_var_shape(self.type))
             query_from = 'FROM <{}>'.format(self.config.get_graph(self.type))
             query_where = self.build_where()
-            query_offset = 'OFFSET {}'.format(offset)
-            query_limit = 'LIMIT {}'.format(limit)
+            query_offset = 'OFFSET {}'.format(offset) if self.config.get_endpoint_type(self.type) == 'remote' else ''
+            query_limit = 'LIMIT {}'.format(limit) if self.config.get_endpoint_type(self.type) == 'remote' else ''
             query = '{} {} {} {} {}'.format(query_prefixes, query_select, query_from, query_where, query_offset)
 
             if limit is None:
@@ -86,23 +87,31 @@ class SPARQL:
         return query
 
     def query(self, offset, limit=None):
-        sparql = SPARQLWrapper(self.config.get_endpoint(self.type))
-        sparql.customHttpHeaders['Accept-Encoding'] = 'gzip'
         query = self.build_query(offset, limit)
-        sparql.setQuery(query)
-        sparql.setReturnFormat(CSV)
 
-        try:
-            result = sparql.query()
-            return result
-        except EndPointNotFound as e:
-            print(e)
-        except Unauthorized as e:
-            print(e)
-        except EndPointInternalError as e:
-            print(e)
-        except SPARQLWrapperException as e:
-            print(e)
+        if self.config.get_endpoint_type(self.type) == 'remote': 
+            sparql = SPARQLWrapper(self.config.get_endpoint(self.type))
+            sparql.customHttpHeaders['Accept-Encoding'] = 'gzip'
+            sparql.setQuery(query)
+            sparql.setReturnFormat(CSV)
+
+            try:
+                return sparql.query()
+            except EndPointNotFound as e:
+                print(e)
+            except Unauthorized as e:
+                print(e)
+            except EndPointInternalError as e:
+                print(e)
+            except SPARQLWrapperException as e:
+                print(e)
+        elif self.config.get_endpoint_type(self.type) == 'local': 
+            endpoint = self.config.get_endpoint(self.type)
+            endpoint.replace('file://', '')
+            graph = Graph()
+            graph.parse(endpoint, format='nt')
+            result = graph.query(query)
+            return result.serialize(format='csv')
 
         return None
 

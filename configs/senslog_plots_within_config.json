@@ -1,0 +1,31 @@
+{
+    "source": {
+        "id": "senslog",
+        "rawquery": "PREFIX qb: <http://purl.org/linked-data/cube#> PREFIX qb4st: <http://www.w3.org/ns/qb4st/>  PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT DISTINCT ?slice ?pos WHERE {?slice a qb:slice. ?slice qb4st:PositionMeasure ?pos . }",
+        "endpoint": "http://senslogrdf.foodie-cloud.org/sparql",
+        "var": {
+            "uri": "slice",
+            "shape": "pos"
+        },
+        "offset": 0,
+        "limit": 165000,
+        "chunksize": 165000,
+        "geo_coding": 3857
+    },
+    "target": {
+        "id": "plots",
+        "rawquery": "PREFIX geo: <http://www.opengis.net/ont/geosparql#> PREFIX foodie: <http://foodie-cloud.com/model/foodie#> SELECT DISTINCT ?plot ?crop ?cropSpeciesLabel ?plotGeometryCoords  WHERE { ?plot foodie:crop ?crop. ?crop foodie:cropSpecies/rdfs:label ?cropSpeciesLabel. ?plot geo:hasGeometry/ogcgs:asWKT  ?plotGeometryCoords . FILTER(STRENDS(STR(?crop),\"2018\")).}",
+        "endpoint": "https://www.foodie-cloud.org/sparql",
+        "var": {
+            "uri": "plot",
+            "shape": "plotGeometryCoords"
+        },
+        "offset": 0,
+        "limit": 165000,
+        "chunksize": 165000
+    },
+    "measure": {
+        "relation": "within"
+    },
+    "output_format": "nt"
+}

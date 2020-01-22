@@ -144,6 +144,15 @@ class Config:
 
         return self.config[type]['endpoint']
 
+    def get_geo_coding(self, type):
+        if type != 'source' and type != 'target':
+            raise Exception("Wrong type (not source or target) specified")
+
+        if 'geo_coding' in self.config[type]:
+            return self.config[type]['geo_coding']
+        
+        return False
+
     def get_geometry(self, type):
         if type != 'source' and type != 'target':
             raise Exception("Wrong type (not source or target) specified")
@@ -160,7 +169,7 @@ class Config:
         if type != 'source' and type != 'target':
             raise Exception("Wrong type (not source or target) specified")
 
-        if 'limit' in self.config[type]:
+        if 'limit' in self.config[type] and self.get_endpoint_type(type) == 'remote' :
             return self.config[type]['limit']
         else:
             return -1
@@ -172,7 +181,7 @@ class Config:
         if type != 'source' and type != 'target':
             raise Exception("Wrong type (not source or target) specified")
 
-        if 'offset' in self.config[type]:
+        if 'offset' in self.config[type] and self.get_endpoint_type(type) == 'remote':
             return self.config[type]['offset']
         else:
             return 0
@@ -227,6 +236,12 @@ class Config:
             raise Exception("Wrong type (not source or target) specified")
 
         return self.config[type]['var']['shape']
+
+    def get_endpoint_type(self, type):
+        if self.config[type]['endpoint'].startswith('http'):
+            return 'remote' #0
+        elif self.config[type]['endpoint'].startswith('file'):
+            return 'local' #1
 
 
 class ConfigNotValidError(Exception):
