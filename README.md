@@ -2,7 +2,7 @@
 
 A tool for discovery of geo-spatial links.
 
-Geo-L retrieves specified properties of spatial objects from source and target datasets, through their respective SPARQL endpoints, and finds topological relations between objects in source and target objects according to topological predicates.
+Geo-L retrieves specified properties of spatial objects from source and target datasets, through their respective SPARQL endpoints, and finds topological relations between objects in source and target datasets according to topological predicates.
 
 The specifications of the relevant properties are provided in a configuration file, which allows constraining the number of object by specifying offset and limit . A dataset can be created through properties which already exist in the graph, and, in addition, Geo-L allows direct construction of ad-hoc values through a SPARQL select statement for a given resource.
 
