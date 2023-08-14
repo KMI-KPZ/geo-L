@@ -2,4 +2,4 @@ more_itertools==5.0.0
 pandas==0.24.1
 psycopg2==2.7.7
 SPARQLWrapper==1.8.2
-tornado==5.1.1
+tornado==6.3.3
